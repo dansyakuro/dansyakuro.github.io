@@ -1,0 +1,3 @@
+.content { align-items: center; justify-content: center; 
+        min-height: 100vh; display: flex;} 
+body { margin: 0; }
