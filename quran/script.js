@@ -21,7 +21,7 @@ async function pilihSurat(no){
 	document.getElementById("kontenku").innerHTML = `
 		<div class="row w-100 m-0">
 			<div class="col-12 col-sm-5 col-lg-4">
-				<div class="card text-center sticky-top">
+				<div class="card text-center sticky-sm-top">
 					<h4 class="card-header" id="asmaSurat">Asma Surat</h4>
 					<div class="card-body">
 						<h5 class="card-title" id="artiSurat">Pembukaan</h5>
