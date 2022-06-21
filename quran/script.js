@@ -29,9 +29,7 @@ async function pilihSurat(no){
 						<p class="card-text" id="ketSurat">With supporting text below as a natural lead-in to additional content.</p>
 					</div>
 					<div class="card-footer text-muted">
-						<audio controls style="width:100%;">
-						<source id="audioSurat" type="audio/mpeg">
-						Your browser does not support the audio element.
+						<audio controls style="width:100%;" id="audioSurat">
 						</audio>
 					</div>
 				</div>
@@ -46,7 +44,10 @@ async function pilihSurat(no){
 		document.getElementById("artiSurat").innerHTML= json[no-1].arti;
 		document.getElementById("tipeSurat").innerHTML= json[no-1].ayat+` Ayat Turun di `+json[no-1].type;
 		document.getElementById("ketSurat").innerHTML= json[no-1].keterangan;
-		document.getElementById("audioSurat").src = json[no-1].audio;
+		document.getElementById("audioSurat").innerHTML = `
+			<source src="`+json[no-1].audio+`" type="audio/mpeg">
+			Your browser does not support the audio element.
+		`;
 	});
 	await fetch('https://al-quran-8d642.firebaseio.com/surat/'+no+'.json?print=pretty')
 		.then(res=>res.json())
