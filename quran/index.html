@@ -12,16 +12,16 @@
     <link rel='stylesheet' type='text/css' media='screen' href='style.css'>
 </head>
 <body>
-	<nav id="navbar-example2" class="headerku navbar navbar-expand-lg navbar-dark bg-primary">
+	<nav id="navbar-example2" class="headerku navbar navbar-expand-lg navbar-dark bg-primary pt-1">
 		<div class="container-fluid">
 			<a class="navbar-brand" href="#" onclick="pilihBeranda()">
-				<h1>Al-Qur'an Indonesia</h1>
+				<h1 class="me-0">Al-Qur'an Indonesia</h1>
 			</a>
 			<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
 				<span class="navbar-toggler-icon"></span>
 			</button>
 			<div class="collapse navbar-collapse justify-content-lg-end" id="navbarNav">
-				<form class="d-flex sticky-top ">
+				<form class="d-flex sticky-top pt-3">
 					<input class="form-control me-2" id="cariTerjemahan" placeholder="Pencarian Ayat" aria-label="Search">
 					<button class="btn btn-outline-dark" onclick="pencarian(document.getElementById('cariTerjemahan').value)">Cari</button>
 				</form>
