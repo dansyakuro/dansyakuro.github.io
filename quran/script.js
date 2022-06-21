@@ -72,7 +72,8 @@ async function pilihBeranda(){
 	.then(json=> {
 		json.forEach((item, index) => {	
 			document.getElementById("berandaku").innerHTML += `
-			<div class="col-4 col-lg-2 d-flex justify-content-center align-items-center my-3"><a class="btn p-0" href="#" onclick="pilihSurat(`+item.nomor+`)">
+			<div class="col-4 col-lg-2 d-flex justify-content-center align-items-center my-3 px-1 px-lg-2">
+				<a class="btn p-0" href="#" onclick="pilihSurat(`+item.nomor+`)">
 				<div class="card border-primary" style="max-width: 18rem;">
 					<div class="card-header" id="asmaSuratCard">`+item.asma+`</div>
 					<div class="card-body text-primary">
@@ -81,7 +82,8 @@ async function pilihBeranda(){
 						<p class="card-text" id="tipeSuratCard">`+item.ayat+` Ayat Turun di `+item.type+`</p>
 					</div>
 				</div>
-			</a></div>
+				</a>
+			</div>
 			`;
 		});
 	});
