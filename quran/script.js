@@ -30,7 +30,7 @@ async function pilihSurat(no){
 					</div>
 					<div class="card-footer text-muted">
 						<audio controls style="width:100%;">
-						<source id="audioSurat" src="http://ia802609.us.archive.org/13/items/quraninindonesia/001AlFaatihah.mp3" type="audio/mpeg">
+						<source id="audioSurat" type="audio/mpeg">
 						Your browser does not support the audio element.
 						</audio>
 					</div>
