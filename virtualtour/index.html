@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width, shrink-to-fit=no">
+    <title>Panolens.js panorama video</title>
+    <style>
+      html, body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        margin: 0;
+      }
+
+      #container {
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+
+  <body>
+  <div id="container"></div>
+    <script src="three/three.min.js"></script>
+    <script src="panolens/panolens.min.js"></script>
+
+    <script>
+    var panorama, panorama2, viewer, container, infospot;
+
+    container = document.querySelector( '#container' );
+
+    panorama = new PANOLENS.ImagePanorama( 'https://pchen66.github.io/Panolens/examples/asset/textures/equirectangular/tunnel.jpg' );
+    panorama2 = new PANOLENS.ImagePanorama( 'https://pchen66.github.io/Panolens/examples/asset/textures/equirectangular/sunset.jpg' );
+
+    infospot = new PANOLENS.Infospot( 500, PANOLENS.DataImage.Info );
+    infospot.position.set( -100, -500, -5000 );
+    infospot.addHoverText( "The Story" );
+    infospot.addEventListener( 'click', function(){
+      viewer.setPanorama( panorama2 );
+    } );
+
+    panorama.add( infospot );
+    infospot2 = new PANOLENS.Infospot( 500, PANOLENS.DataImage.Info );
+    infospot2.position.set( -100, -500, -5000 );
+    infospot2.addHoverText( "Balik Lagi" );
+    infospot2.addEventListener( 'click', function(){
+      viewer.setPanorama( panorama );
+    } );
+    panorama2.add( infospot2 );
+
+    viewer = new PANOLENS.Viewer( { container: container } );
+    viewer.add( panorama, panorama2 );
+
+    viewer.addUpdateCallback(function(){
+      
+    });
+    </script>
+  </body>
+</html>
