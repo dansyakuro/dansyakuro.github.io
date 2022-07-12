@@ -122,11 +122,17 @@ async function pilihBeranda(){
 
 async function pencarian(value){
 	let count = 0;
+	let title = "";
 	document.getElementById('cariTerjemahan').value = "";
 	document.getElementById("kontenku").innerHTML = `
 		<div id="listAyat"></div>
 	`;
 	for(let i=1; i<=114; i++){
+		await fetch('https://al-quran-8d642.firebaseio.com/data.json?print=pretty')
+			.then(res=>res.json())
+			.then(json=> {
+			title = json[i-1].nomor+". "+json[i-1].asma;
+		});
 		await fetch('https://al-quran-8d642.firebaseio.com/surat/'+i+'.json?print=pretty')
 			.then(res=>res.json())
 			.then(json=> {
@@ -134,7 +140,7 @@ async function pencarian(value){
 				if(item.id.search(value) != -1){
 					document.getElementById("listAyat").innerHTML+= `
 					<div class="py-3 border-bottom border-primary">
-						<h4>Nomor Surat : `+i+`</h4>
+						<h4>`+title+`</h4>
 						<h1 class="text-end">`+item.ar+`</h1>
 						<h2>Terjemahan : </h2>
 						<h2>`+item.nomor+`. `+item.id.replace(value, "<mark>"+value+"</mark>")+`</h2>
