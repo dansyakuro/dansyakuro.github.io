@@ -1,37 +1,38 @@
 $(document).ready( async function(){
+	document.body.innerHTML = `
+		<nav id="navbar-example2" class="headerku navbar navbar-expand-lg navbar-dark bg-primary pt-1">
+			<div class="container-fluid">
+				<a class="navbar-brand py-0" href="#" onclick="pilihBeranda()">
+					<h1 class="me-0 mt-2">Al-Qur'an Indonesia</h1>
+				</a>
+				<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+					<span class="navbar-toggler-icon"></span>
+				</button>
+				<div class="collapse navbar-collapse justify-content-lg-end" id="navbarNav">
+					<form class="d-flex sticky-top pt-3 pt-lg-0">
+						<input class="form-control me-2" id="cariTerjemahan" placeholder="Pencarian Ayat" aria-label="Search">
+						<button class="btn btn-outline-dark" onclick="pencarian(document.getElementById('cariTerjemahan').value)">Cari</button>
+					</form>
+					<ul class="mobile d-block d-lg-none navbar-nav gx-5" id="listSuratMobile"></ul>
+				</div>
+			</div>
+		</nav>
+		<div class="wrapper">
+			<div class="menuku d-none d-lg-block bg-secondary">
+				<nav id="menuNavbar" class="navbar navbar-dark py-0">
+					<div class="container-fluid px-0">
+						<ul class="navbar-nav w-100" id="listSurat"></ul>
+					</div>
+				</nav>
+			</div>
+			<div class="content-scroll bg-light p-3" id="kontenku"></div>
+		</div>
+	`;
+	pilihBeranda();
 	await fetch('https://al-quran-8d642.firebaseio.com/data.json?print=pretty')
 	.then(res=>res.json())
 	.then(json=> {
 		json.forEach((item, index) => {
-		document.body.innerHTML = `
-			<nav id="navbar-example2" class="headerku navbar navbar-expand-lg navbar-dark bg-primary pt-1">
-				<div class="container-fluid">
-					<a class="navbar-brand py-0" href="#" onclick="pilihBeranda()">
-						<h1 class="me-0 mt-2">Al-Qur'an Indonesia</h1>
-					</a>
-					<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-						<span class="navbar-toggler-icon"></span>
-					</button>
-					<div class="collapse navbar-collapse justify-content-lg-end" id="navbarNav">
-						<form class="d-flex sticky-top pt-3 pt-lg-0">
-							<input class="form-control me-2" id="cariTerjemahan" placeholder="Pencarian Ayat" aria-label="Search">
-							<button class="btn btn-outline-dark" onclick="pencarian(document.getElementById('cariTerjemahan').value)">Cari</button>
-						</form>
-						<ul class="mobile d-block d-lg-none navbar-nav gx-5" id="listSuratMobile"></ul>
-					</div>
-				</div>
-			</nav>
-			<div class="wrapper">
-				<div class="menuku d-none d-lg-block bg-secondary">
-					<nav id="menuNavbar" class="navbar navbar-dark py-0">
-						<div class="container-fluid px-0">
-							<ul class="navbar-nav w-100" id="listSurat"></ul>
-						</div>
-					</nav>
-				</div>
-				<div class="content-scroll bg-light p-3" id="kontenku"></div>
-			</div>
-		`;
 		document.getElementById("listSurat").innerHTML+= `
 		<li class="nav-item">
 			<a class="ps-3 py-3 nav-link" href="#" onclick="pilihSurat(`+item.nomor+`)">`+item.nomor+". "+item.nama+" ( "+item.asma+ ` )</a>
@@ -42,7 +43,6 @@ $(document).ready( async function(){
 			<a class="dropdown-item" href="#" onclick="pilihSurat(`+item.nomor+`)">`+item.nomor+". "+item.nama+" ( "+item.asma+ ` )</a>
 		</li>
 		`;
-		pilihBeranda();
 		})
 	});
 });
