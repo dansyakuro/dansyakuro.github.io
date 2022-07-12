@@ -137,7 +137,7 @@ async function pencarian(value){
 		await fetch('https://al-quran-8d642.firebaseio.com/data.json?print=pretty')
 			.then(res=>res.json())
 			.then(json=> {
-			title = (count+1)+". Surat : "+json[i-1].asma+" ( "+json[i-1].nomor+" )";
+			title = "Surat : "+json[i-1].asma;
 		});
 		await fetch('https://al-quran-8d642.firebaseio.com/surat/'+i+'.json?print=pretty')
 			.then(res=>res.json())
@@ -146,7 +146,7 @@ async function pencarian(value){
 				if(item.id.search(value) != -1){
 					document.getElementById("listAyat").innerHTML+= `
 					<div class="py-3 border-bottom border-primary">
-						<h4>`+title+`</h4>
+						<h4>`+count+`. `+title+` ( `+i+` )</h4>
 						<h1 class="text-end">`+item.ar+`</h1>
 						<h2>Terjemahan : </h2>
 						<h2>`+item.nomor+`. `+item.id.replace(value, "<mark>"+value+"</mark>")+`</h2>
