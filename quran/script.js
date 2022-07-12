@@ -137,7 +137,7 @@ async function pencarian(value){
 						<h4>Nomor Surat : `+i+`</h4>
 						<h1 class="text-end">`+item.ar+`</h1>
 						<h2>Terjemahan : </h2>
-						<h2>`+item.nomor+`. `+item.id+`</h2>
+						<h2>`+item.nomor+`. `+item.id.replace(value, "<mark>"+value+"</mark>")+`</h2>
 					</div>
 				`;
 				count++;
