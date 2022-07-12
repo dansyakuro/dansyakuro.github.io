@@ -3,16 +3,6 @@ $(document).ready( async function(){
 	.then(res=>res.json())
 	.then(json=> {
 		json.forEach((item, index) => {
-		document.getElementById("listSurat").innerHTML+= `
-		<li class="nav-item">
-			<a class="ps-3 py-3 nav-link" href="#" onclick="pilihSurat(`+item.nomor+`)">`+item.nomor+". "+item.nama+" ( "+item.asma+ ` )</a>
-		</li>
-		`;
-		document.getElementById("listSuratMobile").innerHTML+= `
-		<li class="nav-item">
-			<a class="dropdown-item" href="#" onclick="pilihSurat(`+item.nomor+`)">`+item.nomor+". "+item.nama+" ( "+item.asma+ ` )</a>
-		</li>
-		`;
 		document.body.innerHTML = `
 			<nav id="navbar-example2" class="headerku navbar navbar-expand-lg navbar-dark bg-primary pt-1">
 				<div class="container-fluid">
@@ -41,6 +31,16 @@ $(document).ready( async function(){
 				</div>
 				<div class="content-scroll bg-light p-3" id="kontenku"></div>
 			</div>
+		`;
+		document.getElementById("listSurat").innerHTML+= `
+		<li class="nav-item">
+			<a class="ps-3 py-3 nav-link" href="#" onclick="pilihSurat(`+item.nomor+`)">`+item.nomor+". "+item.nama+" ( "+item.asma+ ` )</a>
+		</li>
+		`;
+		document.getElementById("listSuratMobile").innerHTML+= `
+		<li class="nav-item">
+			<a class="dropdown-item" href="#" onclick="pilihSurat(`+item.nomor+`)">`+item.nomor+". "+item.nama+" ( "+item.asma+ ` )</a>
+		</li>
 		`;
 		pilihBeranda();
 		})
