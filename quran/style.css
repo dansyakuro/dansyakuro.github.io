@@ -6,6 +6,9 @@
 body {
 	overflow-y: hidden;
 }
+mark {
+	padding: 0;
+}
 .load-wrapper {
     display: flex;
     width: 100vw;
