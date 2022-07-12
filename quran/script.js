@@ -137,7 +137,7 @@ async function pencarian(value){
 		await fetch('https://al-quran-8d642.firebaseio.com/data.json?print=pretty')
 			.then(res=>res.json())
 			.then(json=> {
-			title = json[i-1].nomor+". "+json[i-1].asma;
+			title = (count+1)+". Surat : "+json[i-1].asma+" ( "+json[i-1].nomor+" )";
 		});
 		await fetch('https://al-quran-8d642.firebaseio.com/surat/'+i+'.json?print=pretty')
 			.then(res=>res.json())
