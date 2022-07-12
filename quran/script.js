@@ -6,12 +6,12 @@ $(document).ready( async function(){
 		json.forEach((item, index) => {
 		listSurat += `
 		<li class="nav-item">
-			<a class="ps-3 py-3 nav-link" href="#" onclick="pilihSurat(`+item.nomor+`)">`+item.nomor+". "+item.nama+" ( "+item.asma+ ` )</a>
+			<a class="ps-3 py-3 nav-link" href="" onclick="pilihSurat(`+item.nomor+`)">`+item.nomor+". "+item.nama+" ( "+item.asma+ ` )</a>
 		</li>
 		`;
 		listSuratMobile += `
 		<li class="nav-item">
-			<a class="dropdown-item" href="#" onclick="pilihSurat(`+item.nomor+`)">`+item.nomor+". "+item.nama+" ( "+item.asma+ ` )</a>
+			<a class="dropdown-item" href="" onclick="pilihSurat(`+item.nomor+`)">`+item.nomor+". "+item.nama+" ( "+item.asma+ ` )</a>
 		</li>
 		`;
 		})
@@ -19,7 +19,7 @@ $(document).ready( async function(){
 	document.body.innerHTML = `
 		<nav id="navbar-example2" class="headerku navbar navbar-expand-lg navbar-dark bg-primary pt-1">
 			<div class="container-fluid">
-				<a class="navbar-brand py-0" href="#" onclick="pilihBeranda()">
+				<a class="navbar-brand py-0" href="" onclick="pilihBeranda()">
 					<h1 class="me-0 mt-2">Al-Qur'an Indonesia</h1>
 				</a>
 				<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
