@@ -1,11 +1,5 @@
 $(document).ready( async function(){
 	let listSurat = ""; let listSuratMobile = "";
-	let el = document.getElementById("cariTerjemahan");
-	el.addEventListener("keydown", function(event) {
-	    if (event.key === "Enter") {
-		pencarian(el.value);
-	    }
-	});
 	await fetch('https://al-quran-8d642.firebaseio.com/data.json?print=pretty')
 	.then(res =>res.json())
 	.then(json => {
@@ -52,6 +46,12 @@ $(document).ready( async function(){
 		</div>
 	`;
 	pilihBeranda();
+	let el = document.getElementById("cariTerjemahan");
+	el.addEventListener("keydown", function(event) {
+	    if (event.key === "Enter") {
+		pencarian(el.value);
+	    }
+	});
 });
 
 async function pilihSurat(no){
