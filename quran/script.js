@@ -26,10 +26,10 @@ $(document).ready( async function(){
 					<span class="navbar-toggler-icon"></span>
 				</button>
 				<div class="collapse navbar-collapse justify-content-lg-end" id="navbarNav">
-					<form class="d-flex sticky-top pt-3 pt-lg-0">
+					<div class="d-flex sticky-top pt-3 pt-lg-0">
 						<input class="form-control me-2" id="cariTerjemahan" placeholder="Pencarian Ayat" aria-label="Search">
 						<button class="btn btn-outline-dark" onclick="pencarian(document.getElementById('cariTerjemahan').value)">Cari</button>
-					</form>
+					</div>
 					<ul class="mobile d-block d-lg-none navbar-nav gx-5" id="listSuratMobile">`+listSuratMobile+`</ul>
 				</div>
 			</div>
