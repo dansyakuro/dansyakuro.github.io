@@ -106,7 +106,7 @@ async function pilihBeranda(){
 			<div class="col-4 col-lg-2 d-flex justify-content-center align-items-center my-3 px-1 px-lg-2">
 				<a class="btn p-0" href="#" onclick="pilihSurat(`+item.nomor+`)">
 				<div class="card border-primary" style="max-width: 18rem;">
-					<div class="card-header" id="asmaSuratCard">`+item.asma+`</div>
+					<div class="card-header" id="asmaSuratCard">`+item.nomor+`. `+item.asma+`</div>
 					<div class="card-body text-primary">
 						<h4 class="card-title" id="namaSuratCard">`+item.nama+`</h4>
 						<h6 id="artiSuratCard">`+item.arti+`</h6>
