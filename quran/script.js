@@ -1,6 +1,7 @@
 $(document).ready( async function(){
 	await fetch('https://al-quran-8d642.firebaseio.com/data.json?print=pretty')
-	.then({
+	.then(res => res.text()
+	.then(text => {
 		document.body.innerHTML = `
 			<nav id="navbar-example2" class="headerku navbar navbar-expand-lg navbar-dark bg-primary pt-1">
 				<div class="container-fluid">
