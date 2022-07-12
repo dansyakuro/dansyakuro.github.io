@@ -32,7 +32,8 @@ $(document).ready( async function(){
 			</div>
 		`;
 		pilihBeranda();
-	})
+	});
+	await fetch('https://al-quran-8d642.firebaseio.com/data.json?print=pretty')
 	.then(res =>res.json())
 	.then(json => {
 		json.forEach((item, index) => {
