@@ -22,7 +22,7 @@ $(document).ready( async function(){
 				<a class="navbar-brand py-0" href="" onclick="pilihBeranda()">
 					<h1 class="me-0 mt-2">Al-Qur'an Indonesia</h1>
 				</a>
-				<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+				<button id="btnNavbar" class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
 					<span class="navbar-toggler-icon"></span>
 				</button>
 				<div class="collapse navbar-collapse justify-content-lg-end" id="navbarNav">
@@ -129,6 +129,7 @@ async function pilihBeranda(){
 async function pencarian(value){
 	let count = 1;
 	let title = "";
+	document.getElementById('btnNavbar').click();
 	document.getElementById('cariTerjemahan').value = "";
 	document.getElementById("kontenku").innerHTML = `
 		<div id="listAyat"></div>
