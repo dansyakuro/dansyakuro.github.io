@@ -17,7 +17,7 @@ $(document).ready( async function(){
     items = document.querySelectorAll( '.item' );
     viewer = new PANOLENS.Viewer( { container: container } );
 
-    await fetch('https://dansyakuro.github.io/virtualtour/bahan/data.json')
+    await fetch('https://dansyakuro.github.io/virtualtour/script/data.json')
     .then(res =>res.json())
     .then(json => {  
       json.forEach((valueDPI, indexDPI) => {
