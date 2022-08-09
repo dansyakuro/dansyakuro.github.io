@@ -3,67 +3,60 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width, shrink-to-fit=no">
+    <link href='https://fonts.googleapis.com/css?family=Roboto:400,300,100' rel='stylesheet' type='text/css'>
+    <link href='https://fonts.googleapis.com/css?family=Oswald:400,300' rel='stylesheet' type='text/css'>
+    <link href="script/styles.css" rel="stylesheet" type='text/css'>
+    <script src="three/three.min.js"></script>
+    <script src="panolens/panolens.min.js"></script>
+    <script src="script/script.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <title>Panolens.js panorama video</title>
-    <style>
-      html, body {
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        margin: 0;
-      }
-
-      #container {
-        width: 100%;
-        height: 100%;
-      }
-    </style>
   </head>
 
   <body>
-  <div id="container"></div>
-    <script src="https://dansyakuro.github.io/virtualtour/three/three.min.js"></script>
-    <script src="https://dansyakuro.github.io/virtualtour/panolens/panolens.min.js"></script>
+    <nav>
+      <li class="item selected" name="Home" data-hash="#Home">Home</li>
+      <li class="item" name="About" data-hash="#About">About</li>
+      <li class="item" name="Map" data-hash="#Map">Map</li>
+      <li class="item" name="Support" data-hash="#Support">Support</li>
+      <a href="https://github.com/dansyakuro/virtualtour"><li class="item">Github</li></a>
+    </nav>
 
-    <script>
-      $(document).ready( async function(){
-        var viewer, container, a, xyz;
-        let [panorama, infospot] = [[],[]];
-        let [x,y,z] = [[],[],[]];
-
-        container = document.querySelector( '#container' );
-        viewer = new PANOLENS.Viewer( { container: container } );
-        await fetch('https://dansyakuro.github.io/virtualtour/data.json')
-        .then(res =>res.json())
-        .then(json => {  
-          json.forEach((valueDPI, indexDPI) => {
-            panorama[indexDPI] = new PANOLENS.ImagePanorama( valueDPI.image_name ); //variable dari iterasi array dPI
-            panorama[indexDPI].addEventListener( 'enter-fade-start', function(){
-              [x,y,z] = valueDPI.data[0].location;
-              viewer.tweenControlCenter(  new THREE.Vector3( x,y,z ), 0);
-            });
-            panorama[indexDPI].addEventListener("click", function(e){
-                if (e.intersects.length > 0) return;
-                a = viewer.raycaster.intersectObject(viewer.panorama, true)[0].point;
-                xyz = a.x+","+a.y+","+a.z;
-                console.log('(x,y,z) = ' + xyz);
-              });
-            valueDPI.data.forEach((valueData, indexData) => {
-              infospot[indexData] = new PANOLENS.Infospot( 300, PANOLENS.DataImage.Arrow );
-              [x,y,z] = valueDPI.data[indexData].location; //variable dari iterasi array dPI dan var iterasi count target
-              infospot[indexData].position.set( x, y, z );
-              infospot[indexData].addHoverText( "Halaman "+valueDPI.data[indexData].page);
-              infospot[indexData].addEventListener( 'click', function(){
-                viewer.setPanorama( panorama[valueDPI.data[indexData].index] );
-                console.log(valueDPI.data[indexData].index);
-              } );
-              panorama[indexDPI].add( infospot[indexData] );
-            });
-
-            viewer.add( panorama[indexDPI] );
-          })
-        });
-      });
-    </script>
+    <div class="menu-icon">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+    <main>
+      <section class="background full"></section>
+      <section class="content">
+        <section class="title">
+        </section>
+        <section class="about hide">
+            <header><h3>Tentang Technopark</h3></header>
+            <a href="Masterplan New Gunadarma Technopark.jpg"><img src="Masterplan New Gunadarma Technopark.jpg"></a>
+            <article>
+              Gunadarma Technopark (GTP) merupakan komplek/kawasan pengembangan teknologi, manajemen, pendidikan dan bisnis secara terpadu. Lokasi GTP berada di Desa Jamali-Mulyasari, Kecamatan Mande, Kabupaten Cianjur. Kawasan tersebut bersifat holistic integrative untuk menunjang kegiatan pendidikan, pertanian terpadu, pariwisata dan pengembangan teknologi terpadu. Sehingga GTP ini nantinya akan menjadi icon sekaligus wujud dari multidisiplin ilmu yang ada di Universitas Gunadarma.
+            </article>
+            <article style="padding-top:10px">
+              Informasi selengkapnya di <a href="https://agrotekug.blogspot.com/2018/11/gunadarma-technopark.html?m=1" target="_blank">Gunadarma Technopark</a>
+            </article>
+        </section>
+        <section class="map hide">
+          <header>Masterplan New Gunadarma Technopark</header>
+          <img src="Masterplan New Gunadarma Technopark.jpg">
+        </section>
+        <section class="support hide">
+          <header>MAKE IT BETTER</header>
+          <article>
+            Panolens.js continues to be free and open-sourced library. If you think it's useful please give support :)
+          </article>
+          <a href="https://paypal.me/panolens">
+            <div class="support button" href='https://paypal.me/panolens'></div>
+            <div class="support link">paypal.me/panolens</div>
+          </a>
+        </section>
+      </section>
+    </main>
   </body>
 </html>
