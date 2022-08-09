@@ -1,8 +1,6 @@
 $(document).ready( async function(){
 
-    addDomEvents();
-
-    var container, menuIcon, nav, selection, title, aboutSection, mapSection, supportSection, items, viewer, a, xyz;
+    var container, menuIcon, nav, selection, title, aboutSection, mapSection, supportSection, items, viewer, progressElement, a, xyz;
     let [panorama, infospot] = [[],[]];
     let [x,y,z] = [[],[],[]];
 
@@ -16,6 +14,7 @@ $(document).ready( async function(){
     supportSection = document.querySelector( 'section.support' );
     items = document.querySelectorAll( '.item' );
     viewer = new PANOLENS.Viewer( { container: container } );
+    progressElement = document.getElementById( 'progress' );
 
     await fetch('https://dansyakuro.github.io/virtualtour/script/data.json')
     .then(res =>res.json())
@@ -26,6 +25,8 @@ $(document).ready( async function(){
           [x,y,z] = valueDPI.data[0].location;
           viewer.tweenControlCenter(  new THREE.Vector3( x,y,z ), 0);
         });
+        panorama[indexDPI].addEventListener( 'progress', onProgress );
+        panorama[indexDPI].addEventListener( 'enter', onEnter );
         panorama[indexDPI].addEventListener("click", function(e){
             if (e.intersects.length > 0) return;
             a = viewer.raycaster.intersectObject(viewer.panorama, true)[0].point;
@@ -81,6 +82,8 @@ function addDomEvents () {
   }
 }
 
+addDomEvents();
+
 function routeTo ( name, element ) {
 
 window.location.hash = '' + name;
@@ -122,4 +125,17 @@ selection.classList.remove( 'selected' );
 selection = element;
 selection.classList.add( 'selected' );  
 
+}
+
+function onEnter ( event ) {
+    progressElement.style.width = 0;
+    progressElement.classList.remove( 'finish' );
+}
+
+function onProgress ( event ) {
+    progress = event.progress.loaded / event.progress.total * 100;
+    progressElement.style.width = progress + '%';
+    if ( progress === 100 ) {
+        progressElement.classList.add( 'finish' );
+    }
 }
