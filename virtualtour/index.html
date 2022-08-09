@@ -21,40 +21,48 @@
 
   <body>
   <div id="container"></div>
-    <script src="three/three.min.js"></script>
-    <script src="panolens/panolens.min.js"></script>
+    <script src="https://dansyakuro.github.io/virtualtour/three/three.min.js"></script>
+    <script src="https://dansyakuro.github.io/virtualtour/panolens/panolens.min.js"></script>
 
     <script>
-    var panorama, target, viewer, container, infospot;
+      $(document).ready( async function(){
+        var viewer, container, a, xyz;
+        let [panorama, infospot] = [[],[]];
+        let [x,y,z] = [[],[],[]];
 
-    container = document.querySelector( '#container' );
+        container = document.querySelector( '#container' );
+        viewer = new PANOLENS.Viewer( { container: container } );
+        await fetch('https://dansyakuro.github.io/virtualtour/data.json')
+        .then(res =>res.json())
+        .then(json => {  
+          json.forEach((valueDPI, indexDPI) => {
+            panorama[indexDPI] = new PANOLENS.ImagePanorama( valueDPI.image_name ); //variable dari iterasi array dPI
+            panorama[indexDPI].addEventListener( 'enter-fade-start', function(){
+              [x,y,z] = valueDPI.data[0].location;
+              viewer.tweenControlCenter(  new THREE.Vector3( x,y,z ), 0);
+            });
+            panorama[indexDPI].addEventListener("click", function(e){
+                if (e.intersects.length > 0) return;
+                a = viewer.raycaster.intersectObject(viewer.panorama, true)[0].point;
+                xyz = a.x+","+a.y+","+a.z;
+                console.log('(x,y,z) = ' + xyz);
+              });
+            valueDPI.data.forEach((valueData, indexData) => {
+              infospot[indexData] = new PANOLENS.Infospot( 300, PANOLENS.DataImage.Arrow );
+              [x,y,z] = valueDPI.data[indexData].location; //variable dari iterasi array dPI dan var iterasi count target
+              infospot[indexData].position.set( x, y, z );
+              infospot[indexData].addHoverText( "Halaman "+valueDPI.data[indexData].page);
+              infospot[indexData].addEventListener( 'click', function(){
+                viewer.setPanorama( panorama[valueDPI.data[indexData].index] );
+                console.log(valueDPI.data[indexData].index);
+              } );
+              panorama[indexDPI].add( infospot[indexData] );
+            });
 
-    panorama = new PANOLENS.ImagePanorama( 'bahan/vlcsnap-2022-04-30-12h23m23s454.png' );
-    target = new PANOLENS.ImagePanorama( 'bahan/vlcsnap-2022-04-30-12h24m03s751.png' );
-
-    infospot = new PANOLENS.Infospot( 500, PANOLENS.DataImage.Info );
-    infospot.position.set( -100, -500, -5000 );
-    infospot.addHoverText( "The Story" );
-    infospot.addEventListener( 'click', function(){
-      viewer.setPanorama( target );
-    } );
-    panorama.add( infospot );
-      
-    infospot2 = new PANOLENS.Infospot( 500, PANOLENS.DataImage.Info );
-    infospot2.position.set( -100, -500, -5000 );
-    infospot2.addHoverText( "Balik Lagi" );
-    infospot2.addEventListener( 'click', function(){
-      viewer.setPanorama( panorama );
-    } );
-    target.add( infospot2 );
-
-    viewer = new PANOLENS.Viewer( { container: container } );
-    viewer.add( panorama );
-    viewer.add( target );
-
-    viewer.addUpdateCallback(function(){
-      
-    });
+            viewer.add( panorama[indexDPI] );
+          })
+        });
+      });
     </script>
   </body>
 </html>
