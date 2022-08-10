@@ -1,20 +1,20 @@
+var container, menuIcon, nav, selection, title, aboutSection, mapSection, supportSection, items, viewer, progressElement, a, xyz;
+let [panorama, infospot] = [[],[]];
+let [x,y,z] = [[],[],[]];
+
+menuIcon = document.querySelector( '.menu-icon' );
+nav = document.querySelector( 'nav' );
+selection = document.querySelector( '.item.selected' );
+container = document.querySelector( 'section.background' );
+title = document.querySelector( 'section.title' );
+aboutSection = document.querySelector( 'section.about' );
+mapSection = document.querySelector( 'section.map' );
+supportSection = document.querySelector( 'section.support' );
+items = document.querySelectorAll( '.item' );
+viewer = new PANOLENS.Viewer( { container: container } );
+progressElement = document.getElementById( 'progress' );
+
 $(document).ready( async function(){
-
-    var container, menuIcon, nav, selection, title, aboutSection, mapSection, supportSection, items, viewer, progressElement, a, xyz;
-    let [panorama, infospot] = [[],[]];
-    let [x,y,z] = [[],[],[]];
-
-    menuIcon = document.querySelector( '.menu-icon' );
-    nav = document.querySelector( 'nav' );
-    selection = document.querySelector( '.item.selected' );
-    container = document.querySelector( 'section.background' );
-    title = document.querySelector( 'section.title' );
-    aboutSection = document.querySelector( 'section.about' );
-    mapSection = document.querySelector( 'section.map' );
-    supportSection = document.querySelector( 'section.support' );
-    items = document.querySelectorAll( '.item' );
-    viewer = new PANOLENS.Viewer( { container: container } );
-    progressElement = document.getElementById( 'progress' );
 
     await fetch('https://dansyakuro.github.io/virtualtour/script/data.json')
     .then(res =>res.json())
