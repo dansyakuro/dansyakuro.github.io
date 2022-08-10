@@ -224,7 +224,7 @@ section.background.mousedown {
 }
 
 
-section.title, section.map, section.about, section.support {
+section.map, section.about, section.support {
   position: absolute;
   width: 100%;
   max-width: 1000px;
@@ -282,7 +282,6 @@ section.map img {
   height: 100%;
 }
 
-section.title header, section.title article, 
 section.map header, section.map article, 
 section.support header, section.support article{
   -webkit-transition: all 0.5s ease-out;
@@ -290,7 +289,6 @@ section.support header, section.support article{
           transition: all 0.5s ease-out;
 }
 
-section.title.hide header, section.title.hide article,
 section.map.hide header, section.map.hide article,
 section.support.hide header, section.support.hide article {
   -webkit-transform: translateY(-30px);
@@ -299,7 +297,7 @@ section.support.hide header, section.support.hide article {
 }
 
 
-section.title.hide, section.map.hide, section.about.hide, section.support.hide {
+section.map.hide, section.about.hide, section.support.hide {
   opacity: 0;
   filter: alpha(opacity=0);
   pointer-events: none;
@@ -403,13 +401,13 @@ article {
   .menu-icon.open span {
     background: #444;
   }
-  section.title, section.about, section.map {
+  section.about, section.map {
     max-height: 100%;
   }
-  section.map header, section.title header, section.support header {
+  section.map header, section.support header {
     font-size: 45px;
   }
-  section.title article, section.about article, section.map article, section.support article {
+  section.about article, section.map article, section.support article {
     font-size: 13px;
   }
   section.support article {
