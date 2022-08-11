@@ -12,6 +12,8 @@ mapSection = document.querySelector( 'section.map' );
 supportSection = document.querySelector( 'section.support' );
 items = document.querySelectorAll( '.item' );
 viewer = new PANOLENS.Viewer( { container: container } );
+viewer.getCamera().fov = 120;
+viewer.getCamera().updateProjectionMatrix();
 progressElement = document.getElementById( 'progress' );
 
 $(document).ready( async function(){
