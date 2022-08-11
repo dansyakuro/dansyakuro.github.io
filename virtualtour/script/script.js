@@ -36,7 +36,7 @@ $(document).ready( async function(){
             console.log('(x,y,z) = ' + xyz);
           });
         valueDPI.data.forEach((valueData, indexData) => {
-          infospot[indexData] = new PANOLENS.Infospot( 300, PANOLENS.DataImage.Arrow );
+          infospot[indexData] = new PANOLENS.Infospot( 600, PANOLENS.DataImage.Arrow );
           [x,y,z] = valueDPI.data[indexData].location; //variable dari iterasi array dPI dan var iterasi count target
           infospot[indexData].position.set( x, y, z );
           infospot[indexData].addHoverText( "Halaman "+valueDPI.data[indexData].page);
