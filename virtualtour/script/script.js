@@ -43,6 +43,9 @@ $(document).ready( async function(){
           infospot[indexData].addEventListener( 'click', function(){
             viewer.setPanorama( panorama[valueDPI.data[indexData].index] );
             console.log(valueDPI.data[indexData].index);
+            document.querySelectorAll( '.panolens-infospot' ).forEach(value => {
+              value.style.display = "none";
+            });
           } );
           panorama[indexDPI].add( infospot[indexData] );
         });
