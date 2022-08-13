@@ -274,8 +274,8 @@
     { "image_name": "https://dansyakuro.github.io/virtualtour/bahan/vlcsnap-2022-04-30-12h32m22s468.png",
         "data":[
         {
-            "index": 22, "page": 23, "location": [5000, -148, -1506],
-            "target_name":"https://dansyakuro.github.io/virtualtour/bahan/vlcsnap-2022-04-30-12h33m07s727.png"
+            "index": 23, "page": 24, "location": [5000, -148, -1506],
+            "target_name":"https://dansyakuro.github.io/virtualtour/bahan/vlcsnap-2022-04-30-12h34m34s643.png"
         },
         {
             "index": 20, "page": 21, "location": [-5000, -1286, 1519],
@@ -286,7 +286,7 @@
     { "image_name": "https://dansyakuro.github.io/virtualtour/bahan/vlcsnap-2022-04-30-12h33m07s727.png",
         "data":[
         {
-            "index": 20, "page": 21, "location": [5000, -915, -1295],
+            "index": 20, "page": 21, "location": [-4875, -1179, -5000],
             "target_name":"https://dansyakuro.github.io/virtualtour/bahan/vlcsnap-2022-04-30-12h32m05s797.png"
         }
         ]
