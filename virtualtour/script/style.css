@@ -224,7 +224,7 @@ section.background.mousedown {
 }
 
 
-section.map, section.about, section.support {
+section.map, section.about, section.gallery, section.support {
   position: absolute;
   width: 100%;
   max-width: 1000px;
@@ -242,7 +242,7 @@ section.map, section.about, section.support {
           transition: opacity 0.5s ease-out;
 }
 
-section.about {
+section.about, section.gallery {
   overflow-y: scroll;
   -webkit-overflow-scrolling: touch;
 }
@@ -255,7 +255,7 @@ section.about, section.map, section.support {
   letter-spacing: 2px;
 }
 
-section.about {
+section.about, section.gallery {
   background-color: rgba(0,0,0,0.1);
   -webkit-box-shadow: 0 0 50px rgba(0,0,0,0.2);
           box-shadow: 0 0 50px rgba(0,0,0,0.2);
@@ -271,6 +271,11 @@ section.about img {
   padding-bottom: 20px;
   width: 300px;
   height: 100%;
+}
+
+section.gallery img {
+  padding: 20px;
+  width: 300px;
 }
 
 section.map header {
@@ -297,7 +302,7 @@ section.support.hide header, section.support.hide article {
 }
 
 
-section.map.hide, section.about.hide, section.support.hide {
+section.map.hide, section.about.hide, section.gallery.hide, section.support.hide {
   opacity: 0;
   filter: alpha(opacity=0);
   pointer-events: none;
@@ -318,7 +323,7 @@ section.support {
           align-items: center;
 }
 
-section.about a, section.map a, section.support a{
+section.about a, section.gallery a, section.map a, section.support a{
   pointer-events: auto;
   display: inline-block;
 }
@@ -401,7 +406,7 @@ article {
   .menu-icon.open span {
     background: #444;
   }
-  section.about, section.map {
+  section.about, section.gallery, section.map {
     max-height: 100%;
   }
   section.map header, section.support header {
