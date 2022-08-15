@@ -1,5 +1,5 @@
-var container, menuIcon, nav, selection, title, aboutSection, mapSection, supportSection, items, viewer, progressElement, a, xyz;
-let [panorama, infospot] = [[],[]];
+var container, panorama, menuIcon, nav, selection, title, aboutSection, gallertSection, mapSection, supportSection, items, viewer, progressElement, a, xyz;
+let infospot = [];
 let [x,y,z] = [[],[],[]];
 
 menuIcon = document.querySelector( '.menu-icon' );
@@ -8,53 +8,88 @@ selection = document.querySelector( '.item.selected' );
 container = document.querySelector( 'section.background' );
 title = document.querySelector( 'section.title' );
 aboutSection = document.querySelector( 'section.about' );
+gallerySection = document.querySelector( 'section.gallery' );
 mapSection = document.querySelector( 'section.map' );
 supportSection = document.querySelector( 'section.support' );
 items = document.querySelectorAll( '.item' );
 viewer = new PANOLENS.Viewer( { container: container } );
-viewer.getCamera().fov = 120;
+viewer.getCamera().fov = 100;
 viewer.getCamera().updateProjectionMatrix();
 progressElement = document.getElementById( 'progress' );
 
 $(document).ready( async function(){
 
-    await fetch('https://dansyakuro.github.io/virtualtour/script/data.json')
+  await fetch('https://dansyakuro.github.io/virtualtour/script/data.json')
     .then(res =>res.json())
     .then(json => {  
-      json.forEach((valueDPI, indexDPI) => {
-        panorama[indexDPI] = new PANOLENS.ImagePanorama( valueDPI.image_name ); //variable dari iterasi array dPI
-        panorama[indexDPI].addEventListener( 'enter-fade-start', function(){
-          [x,y,z] = valueDPI.data[0].location;
+        panorama = new PANOLENS.ImagePanorama( json[0].image_name ); //variable dari iterasi array dPI
+        panorama.addEventListener( 'enter-fade-start', function(){
+          [x,y,z] = json[0].data[0].location;
           viewer.tweenControlCenter(  new THREE.Vector3( x,y,z ), 0);
         });
-        panorama[indexDPI].addEventListener( 'progress', onProgress );
-        panorama[indexDPI].addEventListener( 'enter', onEnter );
-        panorama[indexDPI].addEventListener("click", function(e){
+        panorama.addEventListener( 'progress', onProgress );
+        panorama.addEventListener( 'enter', onEnter );
+        panorama.addEventListener("click", function(e){
             if (e.intersects.length > 0) return;
             a = viewer.raycaster.intersectObject(viewer.panorama, true)[0].point;
             xyz = a.x+","+a.y+","+a.z;
             console.log('(x,y,z) = ' + xyz);
           });
-        valueDPI.data.forEach((valueData, indexData) => {
+        json[0].data.forEach((valueData, indexData) => {
           infospot[indexData] = new PANOLENS.Infospot( 600, PANOLENS.DataImage.Arrow );
-          [x,y,z] = valueDPI.data[indexData].location; //variable dari iterasi array dPI dan var iterasi count target
+          [x,y,z] = json[0].data[indexData].location; //variable dari iterasi array dPI dan var iterasi count target
           infospot[indexData].position.set( x, y, z );
-          infospot[indexData].addHoverText( "Halaman "+valueDPI.data[indexData].page);
+          infospot[indexData].addHoverText( "Halaman "+json[0].data[indexData].page);
           infospot[indexData].addEventListener( 'click', function(){
-            viewer.setPanorama( panorama[valueDPI.data[indexData].index] );
-            console.log(valueDPI.data[indexData].index);
+            gantiView(json[0].data[indexData].index);
+            console.log(json[0].data[indexData].index);
             document.querySelectorAll( '.panolens-infospot' ).forEach(value => {
               value.style.display = "none";
             });
           } );
-          panorama[indexDPI].add( infospot[indexData] );
+          panorama.add( infospot[indexData] );
         });
 
-        viewer.add( panorama[indexDPI] );
-    })
+        viewer.add( panorama );
   });
 });
 
+async function gantiView(index){
+  await fetch('https://dansyakuro.github.io/virtualtour/script/data.json')
+    .then(res =>res.json())
+    .then(json => {  
+        panorama = new PANOLENS.ImagePanorama( json[index].image_name ); //variable dari iterasi array dPI
+        panorama.addEventListener( 'enter-fade-start', function(){
+          [x,y,z] = json[index].data[0].location;
+          viewer.tweenControlCenter(  new THREE.Vector3( x,y,z ), 0);
+        });
+        panorama.addEventListener( 'progress', onProgress );
+        panorama.addEventListener( 'enter', onEnter );
+        panorama.addEventListener("click", function(e){
+            if (e.intersects.length > 0) return;
+            a = viewer.raycaster.intersectObject(viewer.panorama, true)[0].point;
+            xyz = a.x+","+a.y+","+a.z;
+            console.log('(x,y,z) = ' + xyz);
+          });
+        json[index].data.forEach((valueData, indexData) => {
+          infospot[indexData] = new PANOLENS.Infospot( 600, PANOLENS.DataImage.Arrow );
+          [x,y,z] = json[index].data[indexData].location; //variable dari iterasi array dPI dan var iterasi count target
+          infospot[indexData].position.set( x, y, z );
+          infospot[indexData].addHoverText( "Halaman "+json[index].data[indexData].page);
+          infospot[indexData].addEventListener( 'click', function(){
+            gantiView(json[index].data[indexData].index);
+            console.log(json[index].data[indexData].index);
+            document.querySelectorAll( '.panolens-infospot' ).forEach(value => {
+              value.style.display = "none";
+            });
+          } );
+          panorama.add( infospot[indexData] );
+        });
+
+        viewer.setPanorama( panorama );
+        viewer.add( panorama );
+  });
+}
 function addDomEvents () {
 
   menuIcon.addEventListener( 'click', function () {
@@ -97,6 +132,7 @@ if ( name === 'Home' ) {
 
   title.classList.remove( 'hide' );
   aboutSection.classList.add( 'hide' );
+  gallerySection.classList.add( 'hide' );
   mapSection.classList.add( 'hide' );
   supportSection.classList.add( 'hide' );
 
@@ -104,6 +140,7 @@ if ( name === 'Home' ) {
 
   title.classList.add( 'hide' );
   aboutSection.classList.remove( 'hide' );
+  gallerySection.classList.add( 'hide' );
   mapSection.classList.add( 'hide' );
   supportSection.classList.add( 'hide' );
 
@@ -111,6 +148,7 @@ if ( name === 'Home' ) {
 
   title.classList.add( 'hide' );
   aboutSection.classList.add( 'hide' );
+  gallerySection.classList.add( 'hide' );
   mapSection.classList.remove( 'hide' );
   supportSection.classList.add( 'hide' );
 
@@ -118,8 +156,17 @@ if ( name === 'Home' ) {
 
   title.classList.add( 'hide' );
   aboutSection.classList.add( 'hide' );
+  gallerySection.classList.add( 'hide' );
   mapSection.classList.add( 'hide' );
   supportSection.classList.remove( 'hide' );
+
+} else if ( name === 'Gallery' ){
+
+  title.classList.add( 'hide' );
+  aboutSection.classList.add( 'hide' );
+  gallerySection.classList.remove( 'hide' );
+  mapSection.classList.add( 'hide' );
+  supportSection.classList.add( 'hide' );
 
 }
 
