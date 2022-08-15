@@ -3,23 +3,22 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width, shrink-to-fit=no">
+    <title>VirtualTour Technopark by Panolens</title>
     <link href='https://fonts.googleapis.com/css?family=Roboto:400,300,100' rel='stylesheet' type='text/css'>
     <link href='https://fonts.googleapis.com/css?family=Oswald:400,300' rel='stylesheet' type='text/css'>
     <link href="script/style.css" rel="stylesheet" type='text/css'>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <title>VirtualTour Technopark by Panolens</title>
   </head>
 
   <body>
-    
     <div id="progress"></div>
     
     <nav>
       <li class="item selected" name="Home" data-hash="#Home">Home</li>
       <li class="item" name="About" data-hash="#About">About</li>
+      <li class="item" name="Gallery" data-hash="#Gallery">Gallery</li>
       <li class="item" name="Map" data-hash="#Map">Map</li>
       <li class="item" name="Support" data-hash="#Support">Support</li>
-      <a href="https://github.com/dansyakuro/dansyakuro.github.io/tree/main/virtualtour"><li class="item">Github</li></a>
     </nav>
 
     <div class="menu-icon">
@@ -43,6 +42,19 @@
               Informasi selengkapnya di <a href="https://agrotekug.blogspot.com/2018/11/gunadarma-technopark.html?m=1" target="_blank">Gunadarma Technopark</a>
             </article>
         </section>
+        <section class="gallery hide">
+          <script>
+            function tampilGallery(){
+              let data = "";
+              for(let i = 1; i<=18; i++){
+                data += '<a href="bahan/gallery_'+i+'.jpg"><img src="bahan/gallery_'+i+'.jpg"></a>';
+              }
+              document.write(data);
+            }
+            
+            tampilGallery();
+          </script>
+        </section>
         <section class="map hide">
           <header>Masterplan New Gunadarma Technopark</header>
           <a href="bahan/Map.jpg"><img src="bahan/Map.jpg"></a>
@@ -59,10 +71,8 @@
         </section>
       </section>
     </main>
-    
-    <script src="https://dansyakuro.github.io/virtualtour/three/three.min.js"></script>
-    <script src="https://dansyakuro.github.io/virtualtour/panolens/panolens.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r105/three.min.js"></script>
+    <script src="script/panolens.min.js"></script>
     <script src="script/script.js"></script>
-    
   </body>
 </html>
