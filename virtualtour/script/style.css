@@ -33,6 +33,10 @@ a, a:visited {
   color: #fff;
 }
 
+span a, span a:visited {
+  color: #000;
+}
+
 main {
   display: -webkit-box;
   display: -ms-flexbox;
@@ -225,21 +229,27 @@ section.background.mousedown {
 
 
 section.map, section.about, section.gallery, section.support {
+  background-color: #000 !important;
+  opacity: 0.9;
   position: absolute;
   width: 100%;
   max-width: 1000px;
   padding: 20px;
-  -webkit-transform: translateY(-50%);
-      -ms-transform: translateY(-50%);
-          transform: translateY(-50%);
   max-height: 80%;
   color: #fff;
   margin: auto;
   left: 0;
   right: 0;
+  -webkit-transform: translateY(-50%);
+      -ms-transform: translateY(-50%);
+          transform: translateY(-50%);
   -webkit-transition: opacity 0.5s ease-out;
-          -o-transition: opacity 0.5s ease-out;
+       -o-transition: opacity 0.5s ease-out;
           transition: opacity 0.5s ease-out;
+}
+
+section.gallery {
+  text-align: center;
 }
 
 section.about, section.gallery {
