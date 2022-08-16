@@ -233,7 +233,6 @@ section.map, section.about, section.gallery, section.support {
   opacity: 0.9;
   position: absolute;
   width: 100%;
-  max-width: 1000px;
   padding: 20px;
   max-height: 80%;
   color: #fff;
@@ -293,8 +292,7 @@ section.map header {
 }
 
 section.map img {
-  width: 60vw;
-  height: 100%;
+  width: 40vw;
 }
 
 section.map header, section.map article, 
