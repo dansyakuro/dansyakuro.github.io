@@ -1,21 +1,4 @@
-$(document).ready( async function(){
-	let listSurat = ""; let listSuratMobile = "";
-	await fetch('https://al-quran-8d642.firebaseio.com/data.json?print=pretty')
-	.then(res =>res.json())
-	.then(json => {
-		json.forEach((item, index) => {
-		listSurat += `
-		<li class="nav-item">
-			<a class="ps-3 py-3 nav-link" href="" onclick="pilihSurat(`+item.nomor+`)">`+item.nomor+". "+item.nama+" ( "+item.asma+ ` )</a>
-		</li>
-		`;
-		listSuratMobile += `
-		<li class="nav-item">
-			<a class="dropdown-item" href="" onclick="pilihSurat(`+item.nomor+`)">`+item.nomor+". "+item.nama+" ( "+item.asma+ ` )</a>
-		</li>
-		`;
-		})
-	});
+$(document).ready(function(){
 	document.body.innerHTML = `
 		<nav id="navbar-example2" class="headerku navbar navbar-expand-lg navbar-dark bg-primary pt-1">
 			<div class="container-fluid">
@@ -30,7 +13,7 @@ $(document).ready( async function(){
 						<input class="form-control me-2" id="cariTerjemahan" placeholder="Pencarian Ayat" aria-label="Search">
 						<button class="btn btn-outline-dark" onclick="pencarian(document.getElementById('cariTerjemahan').value)">Cari</button>
 					</div>
-					<ul class="mobile d-block d-lg-none navbar-nav gx-5" id="listSuratMobile">`+listSuratMobile+`</ul>
+					<ul class="mobile d-block d-lg-none navbar-nav gx-5" id="listSuratMobile"></ul>
 				</div>
 			</div>
 		</nav>
@@ -38,23 +21,54 @@ $(document).ready( async function(){
 			<div class="menuku d-none d-lg-block bg-secondary">
 				<nav id="menuNavbar" class="navbar navbar-dark py-0">
 					<div class="container-fluid px-0">
-						<ul class="navbar-nav w-100" id="listSurat">`+listSurat+`</ul>
+						<ul class="navbar-nav w-100" id="listSurat"></ul>
 					</div>
 				</nav>
 			</div>
 			<div class="content-scroll bg-light p-3" id="kontenku"></div>
 		</div>
 	`;
-	pilihBeranda();
+	loadList();
 	let el = document.getElementById("cariTerjemahan");
 	el.addEventListener("keydown", function(event) {
 	    if (event.key === "Enter") {
 		pencarian(el.value);
 	    }
 	});
+	if(window.location.hash != ""){
+		pilihSurat(window.location.hash.substring(1));
+	}else {
+		pilihBeranda();
+	}
 });
 
+async function loadList(){
+	let listSurat= ""; let listSuratMobile= ""; let active = "";
+	await fetch('https://al-quran-8d642.firebaseio.com/data.json?print=pretty')
+	.then(res =>res.json())
+	.then(json => {
+		json.forEach((item, index) => {
+			if(item.nomor == window.location.hash.substring(1)) active = "active";
+			else active = "";
+			listSurat += `
+				<li class="nav-item">
+					<a class="ps-3 py-3 nav-link `+active+`" href="#`+item.nomor+`" onclick="pilihSurat(`+item.nomor+`)">`+item.nomor+". "+item.nama+" ( "+item.asma+ ` )</a>
+				</li>
+			`;
+			listSuratMobile += `
+				<li class="nav-item">
+					<a class="dropdown-item `+active+`" href="#`+item.nomor+`" onclick="pilihSurat(`+item.nomor+`)">`+item.nomor+". "+item.nama+" ( "+item.asma+ ` )</a>
+				</li>
+			`;
+		})
+	});
+	document.getElementById("listSurat").innerHTML = listSurat;
+	document.getElementById("listSuratMobile").innerHTML = listSuratMobile;
+}
+
 async function pilihSurat(no){
+	let ayat, bismillah = "";
+	loadList();
 	document.getElementById("kontenku").innerHTML = `
 		<div class="row w-100 m-0">
 			<div class="col-12 col-sm-5 col-lg-4">
@@ -89,13 +103,25 @@ async function pilihSurat(no){
 		.then(res=>res.json())
 		.then(json=> {
 		json.forEach((item, index) => {
-		document.getElementById("listAyat").innerHTML+= `
-			<div class="py-3 border-bottom border-primary">
-			<h1 class="text-end">`+item.ar+`</h1>
-			<h2>Terjemahan : </h2>
-			<h2>`+item.nomor+`. `+item.id+`</h2>
-			</div>
-		`;
+			if(no>1 && no!=9 && item.nomor==1){
+				ayat = item.ar.substring(39);
+				bismillah = item.ar.substring(0, 39);
+				bismillah = `
+				<div class="py-3 border-bottom border-primary">
+					<h1 class="text-center">`+bismillah+`</h1>
+				</div>
+				`;
+			} else {
+				ayat = item.ar;
+				bismillah = "";
+			}
+			document.getElementById("listAyat").innerHTML+= bismillah + `
+				<div class="py-3 border-bottom border-primary">
+					<h1 class="text-end">`+ayat+`</h1>
+					<h2>Terjemahan : </h2>
+					<h2>`+item.nomor+`. `+item.id+`</h2>
+				</div>
+			`;
 		})
 	});
 }
@@ -110,7 +136,7 @@ async function pilihBeranda(){
 		json.forEach((item, index) => {	
 			document.getElementById("berandaku").innerHTML += `
 			<div class="col-4 col-lg-2 d-flex justify-content-center align-items-center my-3 px-1 px-lg-2">
-				<a class="btn p-0" href="#" onclick="pilihSurat(`+item.nomor+`)">
+				<a class="btn p-0" href="#`+item.nomor+`" onclick="pilihSurat(`+item.nomor+`)">
 				<div class="card border-primary" style="max-width: 18rem;">
 					<div class="card-header" id="asmaSuratCard">`+item.nomor+`. `+item.asma+`</div>
 					<div class="card-body text-primary">
