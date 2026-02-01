@@ -1,193 +1,233 @@
-$(document).ready(function(){
+const API = "https://equran.id/api/v2";
+
+$(document).ready(async function () {
+
 	document.body.innerHTML = `
-		<nav id="navbar-example2" class="headerku navbar navbar-expand-lg navbar-dark bg-primary pt-1">
-			<div class="container-fluid">
-				<a class="navbar-brand py-0" href="index.html" onclick="event.preventDefault(); pilihBeranda()">
-					<h1 class="me-0 mt-2">Al-Qur'an Indonesia</h1>
-				</a>
-				<button id="btnNavbar" class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-					<span class="navbar-toggler-icon"></span>
-				</button>
-				<div class="collapse navbar-collapse justify-content-lg-end" id="navbarNav">
-					<div class="d-flex sticky-top pt-3 pt-lg-0">
-						<input class="form-control me-2" id="cariTerjemahan" placeholder="Pencarian Ayat">
-						<button class="btn btn-outline-dark" onclick="pencarian(document.getElementById('cariTerjemahan').value)">Cari</button>
-					</div>
-					<ul class="mobile d-block d-lg-none navbar-nav gx-5" id="listSuratMobile"></ul>
-				</div>
-			</div>
-		</nav>
-		<div class="wrapper">
-			<div class="menuku d-none d-lg-block bg-secondary">
-				<nav class="navbar navbar-dark py-0">
-					<div class="container-fluid px-0">
-						<ul class="navbar-nav w-100" id="listSurat"></ul>
-					</div>
-				</nav>
-			</div>
-			<div class="content-scroll bg-light p-3" id="kontenku"></div>
-		</div>
-	`;
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary headerku">
+<div class="container-fluid">
 
-	loadList();
+<a class="navbar-brand" href="#" onclick="event.preventDefault(); pilihBeranda()">Al-Qur'an Indonesia v2.0</a>
 
-	let el = document.getElementById("cariTerjemahan");
-	el.addEventListener("keydown", function(e) {
-		if (e.key === "Enter") pencarian(el.value);
-	});
+<form class="d-none d-lg-flex ms-auto" onsubmit="event.preventDefault(); cariAyat()">
+	<input id="searchDesktop" class="form-control form-control-sm me-2" placeholder="Cari terjemahan...">
+	<button class="btn btn-light btn-sm">Cari</button>
+</form>
 
-	const surat = getSuratFromUrl();
-	if(surat){
+<button class="navbar-toggler ms-2" data-bs-toggle="collapse" data-bs-target="#navMobile">
+<span class="navbar-toggler-icon"></span>
+</button>
+
+<div class="collapse navbar-collapse" id="navMobile">
+<div class="p-3 border-bottom d-lg-none">
+	<input id="searchMobile" class="form-control mb-2" placeholder="Cari terjemahan...">
+	<button class="btn btn-light w-100" onclick="cariAyat()">Cari</button>
+</div>
+<ul class="navbar-nav d-lg-none" id="listSuratMobile"></ul>
+</div>
+
+</div>
+</nav>
+
+<div class="wrapper">
+<div class="menuku bg-secondary text-white d-none d-lg-block">
+<ul class="navbar-nav" id="listSurat"></ul>
+</div>
+<div class="content-scroll" id="kontenku"></div>
+</div>
+`;
+
+	await loadList();
+
+	const params = new URLSearchParams(location.search);
+	const surat = params.get("surat");
+	const cari = params.get("cari");
+
+	if (cari) {
+		$("#searchDesktop, #searchMobile").val(cari);
+		cariAyat();
+	} else if (surat) {
 		pilihSurat(surat);
-	}else{
+	} else {
 		pilihBeranda();
 	}
+
+	$("#loader").remove();
 });
 
-/* =====================
-   HELPER URL
-===================== */
-function getSuratFromUrl(){
-	const params = new URLSearchParams(window.location.search);
-	return params.get('surat');
-}
+/* ===== LIST SURAT ===== */
+async function loadList() {
+	const res = await fetch(`${API}/surat`);
+	const json = await res.json();
 
-/* =====================
-   LIST SURAT
-===================== */
-async function loadList(){
-	let listSurat = "", listSuratMobile = "", active = "";
-	const suratAktif = getSuratFromUrl();
+	let desktop = "", mobile = "";
 
-	const json = await fetch('https://al-quran-8d642.firebaseio.com/data.json?print=pretty')
-		.then(res => res.json());
+	json.data.forEach(s => {
+		desktop += `
+<li class="nav-item">
+<a class="nav-link text-white" href="#" onclick="pilihSurat(${s.nomor})">
+${s.nomor}. ${s.namaLatin}
+</a></li>`;
 
-	json.forEach(item => {
-		active = (item.nomor == suratAktif) ? "active" : "";
-		listSurat += `
-			<li class="nav-item">
-				<a class="ps-3 py-3 nav-link ${active}"
-				   href="?surat=${item.nomor}"
-				   onclick="event.preventDefault(); pilihSurat(${item.nomor})">
-				   ${item.nomor}. ${item.nama} ( ${item.asma} )
-				</a>
-			</li>
-		`;
-		listSuratMobile += `
-			<li class="nav-item">
-				<a class="dropdown-item ${active}"
-				   href="?surat=${item.nomor}"
-				   onclick="event.preventDefault(); pilihSurat(${item.nomor})">
-				   ${item.nomor}. ${item.nama} ( ${item.asma} )
-				</a>
-			</li>
-		`;
+		mobile += `
+<li class="nav-item">
+<a class="nav-link" href="#" onclick="pilihSurat(${s.nomor}); bootstrap.Collapse.getInstance(navMobile).hide()">
+${s.nomor}. ${s.namaLatin}
+</a></li>`;
 	});
 
-	document.getElementById("listSurat").innerHTML = listSurat;
-	document.getElementById("listSuratMobile").innerHTML = listSuratMobile;
+	$("#listSurat").html(desktop);
+	$("#listSuratMobile").html(mobile);
 }
 
-/* =====================
-   PILIH SURAT
-===================== */
-async function pilihSurat(no){
-	history.pushState({}, '', `?surat=${no}`);
-	loadList();
+/* ===== PILIH SURAT ===== */
+async function pilihSurat(no) {
+	history.pushState({}, "", `?surat=${no}`);
+	$("#kontenku").html("Loading...");
 
-	let ayat, bismillah = "";
+	const res = await fetch(`${API}/surat/${no}`);
+	const json = await res.json();
+	const s = json.data;
 
-	document.getElementById("kontenku").innerHTML = `
-		<div class="row w-100 m-0">
-			<div class="col-12 col-sm-5 col-lg-4">
-				<div class="card text-center sticky-sm-top">
-					<h4 class="card-header" id="asmaSurat">Asma Surat</h4>
-					<div class="card-body">
-						<h5 class="card-title" id="artiSurat"></h5>
-						<h6 id="tipeSurat"></h6>
-						<p class="card-text" id="ketSurat"></p>
-					</div>
-					<div class="card-footer text-muted">
-						<video controls style="width:100%; height:50px" id="audioSurat"></video>
-					</div>
-				</div>
-			</div>
-			<div class="col-12 col-sm-7 col-lg-8" id="listAyat"></div>
-		</div>
-	`;
+	let html = `
+<div class="card sticky-info mb-3">
+<div class="card-header d-flex justify-content-between align-items-center">
+<b>${s.namaLatin} (${s.arti})</b>
+<button class="btn btn-sm btn-outline-secondary" onclick="$('#infoSurat').toggle()">⮟</button>
+</div>
 
-	const data = await fetch('https://al-quran-8d642.firebaseio.com/data.json?print=pretty')
-		.then(res => res.json());
+<div class="card-body info-scroll" id="infoSurat">
+<p>${s.deskripsi}</p>
 
-	document.getElementById("asmaSurat").innerHTML = data[no-1].asma;
-	document.getElementById("artiSurat").innerHTML = data[no-1].arti;
-	document.getElementById("tipeSurat").innerHTML =
-		data[no-1].ayat + ' Ayat Turun di ' + data[no-1].type;
-	document.getElementById("ketSurat").innerHTML = data[no-1].keterangan;
-	document.getElementById("audioSurat").src = data[no-1].audio.replace("http", "https");
+<div class="d-flex gap-2 mb-2">
+<button class="btn btn-outline-primary btn-sm" onclick="pilihSurat(${Math.max(1,no-1)})">Prev</button>
+<input id="inputSurat" type="number" min="1" max="114" value="${no}"
+class="form-control form-control-sm text-center"
+onchange="pilihSurat(this.value)">
+<button class="btn btn-outline-primary btn-sm" onclick="pilihSurat(${Math.min(114,+no+1)})">Next</button>
+</div>
 
-	const ayatJson = await fetch(`https://al-quran-8d642.firebaseio.com/surat/${no}.json?print=pretty`)
-		.then(res => res.json());
+<input id="inputAyat" class="form-control form-control-sm" placeholder="Ayat ke..." />
+</div>
+</div>
+`;
 
-	ayatJson.forEach(item => {
-		if(no > 1 && no != 9 && item.nomor == 1){
-			ayat = item.ar.substring(39);
-			bismillah = `
-				<div class="py-3 border-bottom border-primary">
-					<h1 class="text-center">${item.ar.substring(0,39)}</h1>
-				</div>
-			`;
-		}else{
-			ayat = item.ar;
-			bismillah = "";
+	s.ayat.forEach(a => {
+		html += `
+<div class="ayat-block" data-ayat="${a.nomorAyat}">
+	<div class="ayat">${a.teksArab}</div>
+	<div class="terjemahan-label">Terjemahan :</div>
+	<div class="terjemahan-text">${a.nomorAyat}. ${a.teksIndonesia}</div>
+</div>`;
+	});
+
+	$("#kontenku").html(html);
+
+	/* === INPUT AYAT → SCROLL === */
+	$("#inputAyat").on("input", function () {
+		const val = parseInt(this.value);
+		if (!val) return;
+
+		const target = $(`.ayat-block[data-ayat="${val}"]`);
+		if (target.length) {
+			$(".content-scroll").animate({
+				scrollTop:
+					$(".content-scroll").scrollTop() +
+					target.position().top - 120
+			}, 300);
 		}
+	});
 
-		document.getElementById("listAyat").innerHTML += bismillah + `
-			<div class="py-3 border-bottom border-primary">
-				<h1 class="text-end">${ayat}</h1>
-				<h2>Terjemahan :</h2>
-				<h2>${item.nomor}. ${item.id}</h2>
-			</div>
-		`;
+	/* === SCROLL → INPUT AYAT === */
+	$(".content-scroll").off("scroll").on("scroll", function(){
+		let current = 1;
+		$(".ayat-block").each(function(){
+			if ($(this).offset().top - $(".content-scroll").offset().top < 140) {
+				current = $(this).data("ayat");
+			}
+		});
+		$("#inputAyat").val(current);
 	});
 }
 
-/* =====================
-   BERANDA
-===================== */
-async function pilihBeranda(){
-	history.pushState({}, '', location.pathname);
+/* ===== BERANDA ===== */
+async function pilihBeranda() {
+	history.pushState({}, "", location.pathname);
 
-	document.getElementById("kontenku").innerHTML =
-		`<div class="row w-100 m-auto" id="berandaku"></div>`;
+	const res = await fetch(`${API}/surat`);
+	const json = await res.json();
 
-	const json = await fetch('https://al-quran-8d642.firebaseio.com/data.json?print=pretty')
-		.then(res => res.json());
+	let html = `<div class="row">`;
 
-	json.forEach(item => {
-		document.getElementById("berandaku").innerHTML += `
-			<div class="col-4 col-lg-2 d-flex justify-content-center align-items-center my-3 px-1 px-lg-2">
-				<a class="btn p-0" href="?surat=${item.nomor}"
-				   onclick="event.preventDefault(); pilihSurat(${item.nomor})">
-					<div class="card border-primary">
-						<div class="card-header">${item.nomor}. ${item.asma}</div>
-						<div class="card-body text-primary">
-							<h4>${item.nama}</h4>
-							<h6>${item.arti}</h6>
-							<p>${item.ayat} Ayat Turun di ${item.type}</p>
-						</div>
-					</div>
-				</a>
-			</div>
-		`;
+	json.data.forEach(s => {
+		html += `
+<div class="col-6 col-lg-3 mb-3">
+<div class="card surat-card h-100" onclick="pilihSurat(${s.nomor})">
+<div class="card-body">
+<b>${s.nomor}. ${s.namaLatin}</b>
+<p class="mb-1">${s.arti}</p>
+<small>${s.jumlahAyat} ayat · ${s.tempatTurun}</small>
+</div>
+</div>
+</div>`;
 	});
+
+	html += `</div>`;
+	$("#kontenku").html(html);
 }
 
-/* =====================
-   BACK / FORWARD
-===================== */
-window.addEventListener('popstate', () => {
-	const surat = getSuratFromUrl();
-	if(surat) pilihSurat(surat);
-	else pilihBeranda();
-});
+/* ===== SEARCH (CLIENT SIDE – AMAN & STABIL) ===== */
+async function cariAyat() {
+	const isMobileOpen = $("#navMobile").hasClass("show");
+	const qRaw = isMobileOpen
+		? $("#searchMobile").val()
+		: $("#searchDesktop").val();
+	if (!qRaw) return;
+
+	const q = qRaw.toLowerCase().trim();
+
+	// simpan ke URL
+	history.pushState({}, "", `?cari=${qRaw}`);
+
+	// AUTO CLOSE MENU MOBILE
+	const nav = bootstrap.Collapse.getInstance(document.getElementById("navMobile"));
+	if (nav) nav.hide();
+
+	$("#kontenku").html("<h5>Mencari ayat...</h5>");
+
+	const res = await fetch(`${API}/surat`);
+	const json = await res.json();
+
+	let hasil = "";
+	const regex = new RegExp(`(${qRaw})`, "gi");
+
+	for (const s of json.data) {
+		const detail = await fetch(`${API}/surat/${s.nomor}`).then(r => r.json());
+
+		detail.data.ayat.forEach(a => {
+			if (a.teksIndonesia.toLowerCase().includes(q)) {
+				hasil += `
+<div class="border-bottom py-3">
+	<b>
+		Surat ${s.nomor}. ${s.namaLatin}
+		— Ayat ${a.nomorAyat}
+	</b>
+
+	<div class="ayat mt-2">${a.teksArab}</div>
+
+	<p class="mt-2">
+		${a.teksIndonesia.replace(
+			regex,
+			`<mark class="bg-warning">$1</mark>`
+		)}
+	</p>
+</div>`;
+			}
+		});
+	}
+
+	$("#kontenku").html(
+		hasil || `<div class="alert alert-warning">Pencarian tidak ditemukan</div>`
+	);
+}
+
+
