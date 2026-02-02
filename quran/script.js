@@ -1,5 +1,7 @@
 const API = "https://equran.id/api/v2";
 let audioPlayer = null;
+let currentAudioUrl = null;
+let currentBtn = null;
 
 $(document).ready(async function () {
 
@@ -7,7 +9,7 @@ $(document).ready(async function () {
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary headerku">
 <div class="container-fluid">
 
-<a class="navbar-brand" href="#" onclick="event.preventDefault(); pilihBeranda()">Al-Qur'an Indonesia v2.0</a>
+<a class="navbar-brand" href="#" onclick="event.preventDefault(); pilihBeranda()">Al-Qur'an Indonesia v2.1</a>
 
 <form class="d-none d-lg-flex ms-auto" onsubmit="event.preventDefault(); cariAyat()">
 	<input id="searchDesktop" class="form-control form-control-sm me-2" placeholder="Cari terjemahan...">
@@ -94,7 +96,10 @@ async function pilihSurat(no) {
 <div class="card sticky-info mb-3">
 <div class="card-header d-flex justify-content-between align-items-center">
 <b>${s.namaLatin} (${s.arti})</b>
-<button class="btn btn-sm btn-outline-secondary" onclick="$('#infoSurat').toggle()">⮟</button>
+<button class="btn btn-sm btn-outline-secondary"
+	onclick="$('#infoSurat').toggle()">
+	Detail Surat
+</button>
 </div>
 
 <div class="card-body info-scroll" id="infoSurat">
@@ -111,7 +116,10 @@ onchange="pilihSurat(this.value)">
 <input id="inputAyat" class="form-control form-control-sm mb-2" placeholder="Ayat ke..." />
 
 <div class="d-flex gap-2">
-<button class="btn btn-success btn-sm" onclick="playFullAudio('${s.audioFull["01"]}')">▶️ Putar Audio Surat</button>
+<button class="btn btn-success btn-sm"
+	onclick="toggleAudio('${s.audioFull["01"]}', this)">
+	▶️ Putar Surat
+</button>
 <button class="btn btn-outline-danger btn-sm" onclick="stopAudio()">⏹ Stop</button>
 </div>
 </div>
@@ -121,14 +129,15 @@ onchange="pilihSurat(this.value)">
 	s.ayat.forEach(a => {
 		html += `
 <div class="ayat-block" data-ayat="${a.nomorAyat}">
-	<div class="d-flex justify-content-between align-items-center">
-		<div class="ayat">${a.teksArab}</div>
-		<button class="btn btn-sm btn-outline-success"
-			onclick="playAyat(this,'${a.audio["01"]}')">▶️</button>
-	</div>
+	<div class="ayat">${a.teksArab}</div>
 
 	<div class="terjemahan-label">Terjemahan :</div>
 	<div class="terjemahan-text">${a.nomorAyat}. ${a.teksIndonesia}</div>
+
+	<button class="btn btn-sm btn-outline-success mt-2"
+		onclick="toggleAudio('${a.audio["01"]}', this)">
+		▶️ Putar Ayat
+	</button>
 </div>`;
 	});
 
@@ -146,16 +155,6 @@ onchange="pilihSurat(this.value)">
 					target.position().top - 120
 			}, 300);
 		}
-	});
-
-	$(".content-scroll").off("scroll").on("scroll", function(){
-		let current = 1;
-		$(".ayat-block").each(function(){
-			if ($(this).offset().top - $(".content-scroll").offset().top < 140) {
-				current = $(this).data("ayat");
-			}
-		});
-		$("#inputAyat").val(current);
 	});
 }
 
@@ -186,14 +185,12 @@ async function pilihBeranda() {
 	$("#kontenku").html(html);
 }
 
-/* ===== SEARCH (CLIENT SIDE) ===== */
+/* ===== SEARCH ===== */
 async function cariAyat() {
 	stopAudio();
 
 	const isMobileOpen = $("#navMobile").hasClass("show");
-	const qRaw = isMobileOpen
-		? $("#searchMobile").val()
-		: $("#searchDesktop").val();
+	const qRaw = isMobileOpen ? $("#searchMobile").val() : $("#searchDesktop").val();
 	if (!qRaw) return;
 
 	const q = qRaw.toLowerCase().trim();
@@ -231,23 +228,33 @@ ${a.teksIndonesia.replace(regex, `<mark class="bg-warning">$1</mark>`)}
 	);
 }
 
-/* ===== AUDIO CONTROL (LAZY LOAD) ===== */
-function playFullAudio(url) {
-	stopAudio();
-	audioPlayer = new Audio(url);
-	audioPlayer.play();
-}
+/* ===== AUDIO (PLAY / PAUSE REAL) ===== */
+function toggleAudio(url, btn) {
+	// audio sama → toggle pause/play
+	if (audioPlayer && currentAudioUrl === url) {
+		if (audioPlayer.paused) {
+			audioPlayer.play();
+			btn.innerText = "⏸ Pause";
+		} else {
+			audioPlayer.pause();
+			btn.innerText = "▶️ Putar Ayat";
+		}
+		return;
+	}
 
-function playAyat(btn, url) {
+	// audio beda → stop lama
 	stopAudio();
-	audioPlayer = new Audio(url);
-	audioPlayer.play();
 
-	$(".btn-outline-success").text("▶️");
-	btn.innerText = "⏸";
+	audioPlayer = new Audio(url);
+	currentAudioUrl = url;
+	currentBtn = btn;
+
+	btn.innerText = "⏸ Pause";
+	audioPlayer.play();
 
 	audioPlayer.onended = () => {
-		btn.innerText = "▶️";
+		btn.innerText = "▶️ Putar Ayat";
+		currentAudioUrl = null;
 	};
 }
 
@@ -255,6 +262,11 @@ function stopAudio() {
 	if (audioPlayer) {
 		audioPlayer.pause();
 		audioPlayer.currentTime = 0;
-		audioPlayer = null;
 	}
+	if (currentBtn) {
+		currentBtn.innerText = "▶️ Putar Ayat";
+	}
+	audioPlayer = null;
+	currentAudioUrl = null;
+	currentBtn = null;
 }
