@@ -1,4 +1,5 @@
 const API = "https://equran.id/api/v2";
+let audioPlayer = null;
 
 $(document).ready(async function () {
 
@@ -81,6 +82,7 @@ ${s.nomor}. ${s.namaLatin}
 
 /* ===== PILIH SURAT ===== */
 async function pilihSurat(no) {
+	stopAudio();
 	history.pushState({}, "", `?surat=${no}`);
 	$("#kontenku").html("Loading...");
 
@@ -106,7 +108,12 @@ onchange="pilihSurat(this.value)">
 <button class="btn btn-outline-primary btn-sm" onclick="pilihSurat(${Math.min(114,+no+1)})">Next</button>
 </div>
 
-<input id="inputAyat" class="form-control form-control-sm" placeholder="Ayat ke..." />
+<input id="inputAyat" class="form-control form-control-sm mb-2" placeholder="Ayat ke..." />
+
+<div class="d-flex gap-2">
+<button class="btn btn-success btn-sm" onclick="playFullAudio('${s.audioFull["01"]}')">▶️ Putar Audio Surat</button>
+<button class="btn btn-outline-danger btn-sm" onclick="stopAudio()">⏹ Stop</button>
+</div>
 </div>
 </div>
 `;
@@ -114,7 +121,12 @@ onchange="pilihSurat(this.value)">
 	s.ayat.forEach(a => {
 		html += `
 <div class="ayat-block" data-ayat="${a.nomorAyat}">
-	<div class="ayat">${a.teksArab}</div>
+	<div class="d-flex justify-content-between align-items-center">
+		<div class="ayat">${a.teksArab}</div>
+		<button class="btn btn-sm btn-outline-success"
+			onclick="playAyat(this,'${a.audio["01"]}')">▶️</button>
+	</div>
+
 	<div class="terjemahan-label">Terjemahan :</div>
 	<div class="terjemahan-text">${a.nomorAyat}. ${a.teksIndonesia}</div>
 </div>`;
@@ -122,7 +134,6 @@ onchange="pilihSurat(this.value)">
 
 	$("#kontenku").html(html);
 
-	/* === INPUT AYAT → SCROLL === */
 	$("#inputAyat").on("input", function () {
 		const val = parseInt(this.value);
 		if (!val) return;
@@ -137,7 +148,6 @@ onchange="pilihSurat(this.value)">
 		}
 	});
 
-	/* === SCROLL → INPUT AYAT === */
 	$(".content-scroll").off("scroll").on("scroll", function(){
 		let current = 1;
 		$(".ayat-block").each(function(){
@@ -151,6 +161,7 @@ onchange="pilihSurat(this.value)">
 
 /* ===== BERANDA ===== */
 async function pilihBeranda() {
+	stopAudio();
 	history.pushState({}, "", location.pathname);
 
 	const res = await fetch(`${API}/surat`);
@@ -175,8 +186,10 @@ async function pilihBeranda() {
 	$("#kontenku").html(html);
 }
 
-/* ===== SEARCH (CLIENT SIDE – AMAN & STABIL) ===== */
+/* ===== SEARCH (CLIENT SIDE) ===== */
 async function cariAyat() {
+	stopAudio();
+
 	const isMobileOpen = $("#navMobile").hasClass("show");
 	const qRaw = isMobileOpen
 		? $("#searchMobile").val()
@@ -184,11 +197,8 @@ async function cariAyat() {
 	if (!qRaw) return;
 
 	const q = qRaw.toLowerCase().trim();
-
-	// simpan ke URL
 	history.pushState({}, "", `?cari=${qRaw}`);
 
-	// AUTO CLOSE MENU MOBILE
 	const nav = bootstrap.Collapse.getInstance(document.getElementById("navMobile"));
 	if (nav) nav.hide();
 
@@ -202,24 +212,15 @@ async function cariAyat() {
 
 	for (const s of json.data) {
 		const detail = await fetch(`${API}/surat/${s.nomor}`).then(r => r.json());
-
 		detail.data.ayat.forEach(a => {
 			if (a.teksIndonesia.toLowerCase().includes(q)) {
 				hasil += `
 <div class="border-bottom py-3">
-	<b>
-		Surat ${s.nomor}. ${s.namaLatin}
-		— Ayat ${a.nomorAyat}
-	</b>
-
-	<div class="ayat mt-2">${a.teksArab}</div>
-
-	<p class="mt-2">
-		${a.teksIndonesia.replace(
-			regex,
-			`<mark class="bg-warning">$1</mark>`
-		)}
-	</p>
+<b>Surat ${s.nomor}. ${s.namaLatin} — Ayat ${a.nomorAyat}</b>
+<div class="ayat mt-2">${a.teksArab}</div>
+<p class="mt-2">
+${a.teksIndonesia.replace(regex, `<mark class="bg-warning">$1</mark>`)}
+</p>
 </div>`;
 			}
 		});
@@ -230,4 +231,30 @@ async function cariAyat() {
 	);
 }
 
+/* ===== AUDIO CONTROL (LAZY LOAD) ===== */
+function playFullAudio(url) {
+	stopAudio();
+	audioPlayer = new Audio(url);
+	audioPlayer.play();
+}
 
+function playAyat(btn, url) {
+	stopAudio();
+	audioPlayer = new Audio(url);
+	audioPlayer.play();
+
+	$(".btn-outline-success").text("▶️");
+	btn.innerText = "⏸";
+
+	audioPlayer.onended = () => {
+		btn.innerText = "▶️";
+	};
+}
+
+function stopAudio() {
+	if (audioPlayer) {
+		audioPlayer.pause();
+		audioPlayer.currentTime = 0;
+		audioPlayer = null;
+	}
+}
