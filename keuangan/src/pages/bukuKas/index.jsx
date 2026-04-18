@@ -5,6 +5,8 @@ import { supabase } from "../../lib/supabase";
 export default function BukuKasIndex() {
   const { id_buku } = useParams();
 
+  const isMobile = window.innerWidth < 768;
+
   const [buku, setBuku] = useState(null);
   const [ringkasan, setRingkasan] = useState({});
   const [transaksi, setTransaksi] = useState([]);
@@ -66,7 +68,6 @@ export default function BukuKasIndex() {
       .order("tanggal", { ascending: true });
 
     setTransaksi(trx || []);
-
     hitungRingkasan(trx || [], bukuData);
   }
 
@@ -221,7 +222,7 @@ export default function BukuKasIndex() {
   return (
     <div>
 
-      <div style={styles.summaryGrid}>
+      <div style={styles.summaryGrid(isMobile)}>
         <SummaryCard title={buku?.nama} desc={buku?.deskripsi} />
         <SummaryCard title="Saldo Awal Bulan" value={ringkasan?.saldo_awal_bulan} />
         <SummaryCard title="Saldo Akhir Bulan" value={ringkasan?.saldo_akhir_bulan} />
@@ -245,7 +246,7 @@ export default function BukuKasIndex() {
 
         <input style={styles.input} type="number" value={tahun} onChange={e => setTahun(Number(e.target.value))} />
 
-        <div style={{ marginLeft: "auto", display: "flex", gap: 10 }}>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 10, flexWrap: "wrap" }}>
           <button style={styles.btnPrimary} onClick={() => setModal("Transfer")}>Transfer</button>
           <button style={styles.btnSuccess} onClick={() => setModal("Pemasukan")}>Pemasukan</button>
           <button style={styles.btnDanger} onClick={() => setModal("Pengeluaran")}>Pengeluaran</button>
@@ -283,12 +284,12 @@ export default function BukuKasIndex() {
                 <td style={styles.td}>
                   {trx.tipe === "Pengeluaran" ? "Rp " + trx.nominal.toLocaleString() : "-"}
                 </td>
+                <td style={styles.td}>Rp {trx.saldo_running.toLocaleString()}</td>
                 <td style={styles.td}>
-                  Rp {trx.saldo_running.toLocaleString()}
-                </td>
-                <td style={styles.td}>
-                  <button style={styles.btnPrimary} onClick={() => handleEdit(trx)}>Edit</button>
-                  <button style={styles.btnDanger} onClick={() => handleDelete(trx)}>Hapus</button>
+                  <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+                    <button style={styles.btnPrimary} onClick={() => handleEdit(trx)}>Edit</button>
+                    <button style={styles.btnDanger} onClick={() => handleDelete(trx)}>Hapus</button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -305,40 +306,6 @@ export default function BukuKasIndex() {
               value={form.tanggal || ""}
               onChange={e => setForm({ ...form, tanggal: e.target.value })}
             />
-
-            {modal === "Transfer" && (
-              <>
-                <select style={styles.input}
-                  value={form.dari_buku || ""}
-                  onChange={e => setForm({ ...form, dari_buku: e.target.value })}
-                >
-                  <option value="">Dari Buku</option>
-                  {listBuku.map(b => <option key={b.id_buku} value={b.id_buku}>{b.nama}</option>)}
-                </select>
-
-                <select style={styles.input}
-                  value={form.ke_buku || ""}
-                  onChange={e => setForm({ ...form, ke_buku: e.target.value })}
-                >
-                  <option value="">Ke Buku</option>
-                  {listBuku.map(b => <option key={b.id_buku} value={b.id_buku}>{b.nama}</option>)}
-                </select>
-              </>
-            )}
-
-            {(modal === "Pemasukan" || modal === "Pengeluaran") && (
-              <select style={styles.input}
-                value={form.id_kategori || ""}
-                onChange={e => setForm({ ...form, id_kategori: e.target.value })}
-              >
-                <option value="">Pilih Kategori</option>
-                {kategori
-                  .filter(k => k.id_tipe_transaksi === (modal === "Pemasukan" ? 1 : 2))
-                  .map(k => (
-                    <option key={k.id_kategori} value={k.id_kategori}>{k.nama_kategori}</option>
-                  ))}
-              </select>
-            )}
 
             <input style={styles.input} placeholder="Nominal"
               value={form.nominal || ""}
@@ -372,8 +339,10 @@ export default function BukuKasIndex() {
 }
 
 function SummaryCard({ title, value, desc }) {
+  const isMobile = window.innerWidth < 768;
+
   return (
-    <div style={styles.card}>
+    <div style={styles.card(isMobile)}>
       <h4>{title}</h4>
       {desc && <small>{desc}</small>}
       {value !== undefined && <h3>Rp {Number(value || 0).toLocaleString()}</h3>}
@@ -384,40 +353,50 @@ function SummaryCard({ title, value, desc }) {
 const styles = {
   th: { textAlign: "center", padding: 10 },
   td: { textAlign: "center", padding: 10 },
-  summaryGrid: {
+
+  summaryGrid: (isMobile) => ({
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))",
-    gap: 20,
+    gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(auto-fill,minmax(220px,1fr))",
+    gap: isMobile ? 10 : 20,
     marginBottom: 20,
-  },
-  card: {
+  }),
+
+  card: (isMobile) => ({
     background: "#fff",
-    padding: 20,
+    padding: isMobile ? 12 : 20,
     borderRadius: 12,
     boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
-  },
+    fontSize: isMobile ? 12 : 14,
+  }),
+
   filterRow: {
     display: "flex",
     gap: 10,
     marginBottom: 20,
     flexWrap: "wrap",
   },
+
   tableCard: {
     background: "#fff",
     padding: 20,
     borderRadius: 12,
     boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+    overflowX: "auto",
   },
+
   table: {
     width: "100%",
+    minWidth: 700,
     borderCollapse: "collapse",
   },
+
   input: {
     padding: 8,
     borderRadius: 6,
     border: "1px solid #ccc",
-    color: "#fff"
+    color: "#000",
   },
+
   btnPrimary: {
     background: "#1976d2",
     color: "#fff",
@@ -426,6 +405,7 @@ const styles = {
     borderRadius: 6,
     cursor: "pointer",
   },
+
   btnSuccess: {
     background: "#2e7d32",
     color: "#fff",
@@ -434,6 +414,7 @@ const styles = {
     borderRadius: 6,
     cursor: "pointer",
   },
+
   btnDanger: {
     background: "#d32f2f",
     color: "#fff",
@@ -442,6 +423,7 @@ const styles = {
     borderRadius: 6,
     cursor: "pointer",
   },
+
   modal: {
     position: "fixed",
     inset: 0,
@@ -450,6 +432,7 @@ const styles = {
     justifyContent: "center",
     alignItems: "center",
   },
+
   modalBox: {
     background: "#fff",
     padding: 20,

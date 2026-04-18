@@ -10,11 +10,17 @@
 html, body {
   width: 100%;
   height: 100%;
+  margin: 0;
+}
+
+body {
+  min-height: 100vh;
 }
 
 /* ROOT React full */
 #root {
   width: 100%;
+  min-width: 20vw;
   min-height: 100vh;
 }
 

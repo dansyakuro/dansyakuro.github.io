@@ -7,73 +7,92 @@ export default function DaftarBuku() {
   const [editId, setEditId] = useState(null);
   const [form, setForm] = useState({ nama: "", saldo_awal: "", deskripsi: "" });
 
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 600);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 600);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   useEffect(() => {
     load();
   }, []);
 
   const load = async () => {
-    const user = (await supabase.auth.getUser()).data.user;
-  
-    // ✅ buku
-    const { data: bukuData } = await supabase
+    const { data: auth } = await supabase.auth.getUser();
+    const user = auth?.user;
+
+    if (!user) return;
+
+    // buku
+    const { data: bukuData, error: bukuErr } = await supabase
       .from("tbl_buku")
       .select("*")
       .eq("id_user", user.id);
-  
-    if (!bukuData) return;
-  
-    // ✅ ambil transaksi yang BENAR
-    const { data: trx } = await supabase
-    .from("tbl_buku_transaksi")
-    .from("tbl_buku_transaksi")
-    .select(`
-      id_buku,
-      nominal,
-      tbl_transaksi_utang_piutang (
-        id_tipe_transaksi
-      )
-    `)
-    .eq("id_user", user.id)
-    .eq("is_hidden", false);
-  
+
+    if (bukuErr) {
+      console.error("buku error:", bukuErr);
+      return;
+    }
+
+    // transaksi (FIX FINAL - TANPA RELASI)
+    const { data: trx, error: trxErr } = await supabase
+      .from("tbl_buku_transaksi")
+      .select(`
+        id_buku,
+        nominal,
+        tipe
+      `) // ⬅️ GANTI INI kalau nama kolom beda
+      .eq("is_hidden", false);
+
+    if (trxErr) {
+      console.error("trx error:", trxErr);
+      return;
+    }
+
     const map = {};
-  
+
     trx?.forEach((t) => {
-      if (t.is_hidden) return; // 🔥 skip yg dihapus
-  
+      if (!t.id_buku) return;
+
+      const tipe = t.tipe; // ⬅️ SESUAIKAN NAMA KOLOM
+      const nilai = Number(t.nominal || 0);
+
       if (!map[t.id_buku]) {
         map[t.id_buku] = { masuk: 0, keluar: 0 };
       }
-  
-      if (t.id_tipe_transaksi === 1) {
-        map[t.id_buku].masuk += t.nominal;
-      }
-  
-      if (t.id_tipe_transaksi === 2) {
-        map[t.id_buku].keluar += t.nominal;
+
+      if (tipe === "Pemasukan") {
+        map[t.id_buku].masuk += nilai;
+      } else if (tipe === "Pengeluaran") {
+        map[t.id_buku].keluar += nilai;
       }
     });
-  
+
     const final = bukuData.map((b) => {
       const masuk = map[b.id_buku]?.masuk || 0;
       const keluar = map[b.id_buku]?.keluar || 0;
-  
-      const saldo_akhir =
-        parseInt(b.saldo_awal || 0) + masuk - keluar;
-  
-      return { ...b, masuk, keluar, saldo_akhir };
+
+      return {
+        ...b,
+        masuk,
+        keluar,
+        saldo_akhir: Number(b.saldo_awal || 0) + masuk - keluar,
+      };
     });
-  
-    // sort tetap
+
     final.sort((a, b) => {
       if (a.is_default && !b.is_default) return -1;
       if (!a.is_default && b.is_default) return 1;
-      return a.nama.localeCompare(b.nama);
+      return (a.nama || "").localeCompare(b.nama || "");
     });
-  
+
     setBuku(final);
   };
-  
 
   const openAdd = () => {
     setEditId(null);
@@ -123,20 +142,19 @@ export default function DaftarBuku() {
 
   const del = async (id) => {
     if (!confirm("Hapus buku ini?")) return;
-  
+
     const { error } = await supabase
       .from("tbl_buku")
       .delete()
       .eq("id_buku", id);
-  
+
     if (error) {
       alert("Gagal hapus: " + error.message);
       return;
     }
-  
+
     load();
   };
-  
 
   const setDefault = async (id) => {
     const user = (await supabase.auth.getUser()).data.user;
@@ -157,71 +175,132 @@ export default function DaftarBuku() {
   return (
     <div>
 
-      {/* HEADER */}
-      <div style={styles.header}>
+      <div
+        style={{
+          ...styles.header,
+          flexDirection: isMobile ? "column" : "row",
+          alignItems: isMobile ? "flex-start" : "center",
+          gap: isMobile ? 10 : 0,
+        }}
+      >
         <h2>Daftar Buku</h2>
         <button style={styles.btnPrimary} onClick={openAdd}>
           + Buat Buku Kas
         </button>
       </div>
 
-      <div style={styles.divider} />
+      <div
+        style={{
+          ...styles.divider,
+          maxWidth: isMobile ? 420 : "100%",
+          margin: isMobile ? "0 auto 20px" : "0 0 20px",
+        }}
+      />
 
-      {/* GRID */}
-      <div style={styles.grid}>
-      {buku.map((b) => {
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: isMobile
+            ? "1fr"
+            : "repeat(auto-fill, minmax(260px,1fr))",
+          gap: isMobile ? 12 : 20,
+        }}
+      >
+        {buku.map((b) => {
           const total = (b.masuk || 0) + (b.keluar || 0);
+
           const persenMasuk = total ? (b.masuk / total) * 100 : 0;
+          const persenKeluar = total ? (b.keluar / total) * 100 : 0;
 
           return (
-            <div key={b.id_buku} style={styles.card}>
+            <div
+              key={b.id_buku}
+              style={{
+                ...styles.card,
+                padding: isMobile ? 14 : 20,
+              }}
+            >
 
-              <h3>{b.nama}</h3>
-              <small>{b.deskripsi}</small>
+              <h3 style={{ fontSize: isMobile ? 16 : 18 }}>{b.nama}</h3>
+              <small style={{ fontSize: isMobile ? 12 : 13 }}>{b.deskripsi}</small>
 
-              {/* DONUT */}
-            <div style={{ marginTop: 10, textAlign: "center" }}>
-                <div
-                    style={{
-                    width: 70,
-                    height: 70,
+              <div style={{ marginTop: 10, textAlign: "center" }}>
+              <div
+                  onMouseMove={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+
+                    const cx = rect.width / 2;
+                    const cy = rect.height / 2;
+
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+
+                    const dx = x - cx;
+                    const dy = y - cy;
+
+                    let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+                    angle = (angle + 360 + 90) % 360; 
+                    // +90 biar start dari atas (sesuai conic-gradient default)
+
+                    const batasMasuk = persenMasuk; // karena gradient dari 0 → persenMasuk
+
+                    const isMasuk = angle <= batasMasuk;
+
+                    const text = isMasuk
+                      ? `Pemasukan: ${persenMasuk.toFixed(1)}% (Rp ${b.masuk.toLocaleString()})`
+                      : `Pengeluaran: ${persenKeluar.toFixed(1)}% (Rp ${b.keluar.toLocaleString()})`;
+
+                    e.currentTarget.title = text;
+                  }}
+                  style={{
+                    width: isMobile ? 60 : 70,
+                    height: isMobile ? 60 : 70,
                     borderRadius: "50%",
                     margin: "auto",
+                    cursor: "pointer",
                     background: `conic-gradient(
                       #4caf50 0% ${persenMasuk}%,
                       #f44336 ${persenMasuk}% 100%
                     )`,
-                    }}
+                  }}
                 />
 
-                {/* LEGEND */}
                 <div style={{ fontSize: 12, marginTop: 6 }}>
-                    <span style={{ color: "#4caf50" }}>● Pemasukan</span>
-                    {"  "}
-                    <span style={{ color: "#f44336" }}>● Pengeluaran</span>
+                  <span style={{ color: "#4caf50" }}>● Pemasukan</span>{" "}
+                  <span style={{ color: "#f44336" }}>● Pengeluaran</span>
                 </div>
-            </div>
+              </div>
 
-            <div style={styles.saldoBox}>
+              <div style={{ fontSize: 11, marginTop: 6 }}>
+                <div>📈 {persenMasuk.toFixed(1)}% (Rp {b.masuk.toLocaleString()})</div>
+                <div>📉 {persenKeluar.toFixed(1)}% (Rp {b.keluar.toLocaleString()})</div>
+              </div>
+
+              <div style={styles.saldoBox}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <div>
-                        <small style={styles.label}>Saldo Awal</small>
-                        <div style={styles.money}>
-                            Rp {Number(b.saldo_awal).toLocaleString()}
-                        </div>
+                  <div>
+                    <small style={styles.label}>Saldo Awal</small>
+                    <div style={styles.money}>
+                      Rp {Number(b.saldo_awal).toLocaleString()}
                     </div>
+                  </div>
 
-                    <div style={{ textAlign: "right" }}>
-                        <small style={styles.label}>Saldo Akhir</small>
-                        <div style={styles.money}>
-                            Rp {Number(b.saldo_akhir).toLocaleString()}
-                        </div>
+                  <div style={{ textAlign: "right" }}>
+                    <small style={styles.label}>Saldo Akhir</small>
+                    <div style={styles.money}>
+                      Rp {Number(b.saldo_akhir).toLocaleString()}
                     </div>
+                  </div>
                 </div>
-            </div>
+              </div>
 
-              {/* BUTTONS */}
-              <div style={styles.btnRow}>
+              <div
+                style={{
+                  ...styles.btnRow,
+                  flexDirection: isMobile ? "column" : "row",
+                }}
+              >
                 <button style={styles.btnEdit} onClick={() => openEdit(b)}>
                   Edit
                 </button>
@@ -243,10 +322,16 @@ export default function DaftarBuku() {
         })}
       </div>
 
-      {/* MODAL */}
       {show && (
-        <div style={styles.modal}>
-          <div style={styles.box}>
+          <div style={styles.modal}>
+            <div
+              style={{
+                ...styles.box,
+                width: isMobile ? "90%" : 320,
+                maxHeight: isMobile ? "90vh" : "auto",
+                overflowY: "auto",
+              }}
+            >
             <h3>{editId ? "Edit Buku" : "Buat Buku Kas"}</h3>
 
             <input
@@ -293,56 +378,33 @@ const styles = {
     alignItems: "center",
     marginBottom: 10,
   },
-
   divider: {
     borderBottom: "1px solid #ddd",
     marginBottom: 20,
+    width: "100%",
   },
-
   grid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fill, minmax(300px,1fr))",
     gap: 20,
   },
-
   card: {
     background: "#fff",
-    padding: 20,
+    padding: 16,
     borderRadius: 12,
     boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+    width: "100%",   // ✅ penting
+    maxWidth: "100%", // ✅ biar ikut grid
   },
-
-  donutWrap: {
-    display: "flex",
-    justifyContent: "center",
-    marginBottom: 10,
-  },
-
-  donut: {
-    width: 70,
-    height: 70,
-    borderRadius: "50%",
-    background:
-      "conic-gradient(#1976d2 70%, #e0e0e0 0%)",
-  },
-
-  saldoRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    marginTop: 12,
-  },
-
   label: {
     fontSize: 12,
     color: "#666",
   },
-
   btnRow: {
     display: "flex",
     gap: 8,
     marginTop: 15,
   },
-
   btnPrimary: {
     background: "#1976d2",
     color: "#fff",
@@ -351,7 +413,6 @@ const styles = {
     borderRadius: 6,
     cursor: "pointer",
   },
-
   btnEdit: {
     background: "#1976d2",
     color: "#fff",
@@ -360,7 +421,6 @@ const styles = {
     borderRadius: 6,
     cursor: "pointer",
   },
-
   btnDelete: {
     background: "#d32f2f",
     color: "#fff",
@@ -369,7 +429,6 @@ const styles = {
     borderRadius: 6,
     cursor: "pointer",
   },
-
   btnDefault: {
     background: "#2e7d32",
     color: "#fff",
@@ -378,7 +437,6 @@ const styles = {
     borderRadius: 6,
     cursor: "pointer",
   },
-
   btnCancel: {
     background: "#d32f2f",
     color: "#fff",
@@ -387,7 +445,6 @@ const styles = {
     borderRadius: 6,
     cursor: "pointer",
   },
-
   modal: {
     position: "fixed",
     inset: 0,
@@ -395,8 +452,8 @@ const styles = {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
+    zIndex: 999, // 🔥 penting kalau ketutup element lain
   },
-
   box: {
     background: "#fff",
     padding: 20,
@@ -406,7 +463,6 @@ const styles = {
     flexDirection: "column",
     gap: 10,
   },
-
   input: {
     padding: 8,
     borderRadius: 6,

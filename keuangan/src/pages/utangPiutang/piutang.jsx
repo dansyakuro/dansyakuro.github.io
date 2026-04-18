@@ -45,14 +45,14 @@ export default function Piutang() {
     const clean = (piutang || []).map(p => {
       const trx = (p.tbl_transaksi_utang_piutang || [])
         .filter(t => !t.is_hidden);
-    
+
       const saldo = trx.reduce((a, b) => a + b.nominal, 0);
-    
+
       return {
         ...p,
         saldo,
         deskripsi: trx[0]?.deskripsi || "-",
-        tanggal: trx[0]?.tanggal || null, // ✅ INI YANG KURANG
+        tanggal: trx[0]?.tanggal || null,
       };
     });
 
@@ -127,11 +127,9 @@ export default function Piutang() {
     fetchData();
   }
 
-  // 🔥 FINAL DELETE FIX
   async function handleDelete(id) {
     if (!confirm("Yakin hapus?")) return;
 
-    // ambil transaksi dulu
     const { data: trxList } = await supabase
       .from("tbl_transaksi_utang_piutang")
       .select("*")
@@ -141,7 +139,6 @@ export default function Piutang() {
       ?.map(t => t.id_buku_transaksi)
       .filter(Boolean);
 
-    // soft delete buku kas
     if (bukuIds.length) {
       await supabase
         .from("tbl_buku_transaksi")
@@ -149,13 +146,11 @@ export default function Piutang() {
         .in("id", bukuIds);
     }
 
-    // hard delete transaksi
     await supabase
       .from("tbl_transaksi_utang_piutang")
       .delete()
       .eq("id_utang_piutang", id);
 
-    // hard delete utama
     await supabase
       .from("tbl_utang_piutang")
       .delete()
@@ -208,49 +203,53 @@ export default function Piutang() {
 
       {/* TABLE */}
       <div style={styles.tableCard}>
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.th}>Status</th>
-              <th style={styles.th}>Tanggal</th>
-              <th style={styles.th}>Klien</th>
-              <th style={styles.th}>Deskripsi</th>
-              <th style={styles.th}>Saldo</th>
-              <th style={styles.th}>Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(p => (
-              <tr key={p.id_utang_piutang}>
-                <td style={styles.td}>{p.status}</td>
-                <td style={styles.td}>{formatDate(p.tanggal)}</td>
-                <td style={styles.td}>{p.klien}</td>
-                <td style={styles.td}>{p.deskripsi}</td>
-                <td style={styles.td}>
-                  Rp {Math.abs(p.saldo).toLocaleString()}
-                </td>
-                <td style={styles.td}>
-                  <button
-                    style={styles.btnPrimary}
-                    onClick={() => navigate(`/piutang/${p.id_utang_piutang}`)}
-                  >
-                    Detail
-                  </button>
-
-                  <button
-                    style={styles.btnDanger}
-                    onClick={() => handleDelete(p.id_utang_piutang)}
-                  >
-                    Hapus
-                  </button>
-                </td>
+        <div style={{ overflowX: "auto" }}>
+          <table style={styles.table}>
+            <thead>
+              <tr>
+                <th style={styles.th}>Status</th>
+                <th style={styles.th}>Tanggal</th>
+                <th style={styles.th}>Klien</th>
+                <th style={styles.th}>Deskripsi</th>
+                <th style={styles.th}>Saldo</th>
+                <th style={styles.th}>Aksi</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filtered.map(p => (
+                <tr key={p.id_utang_piutang}>
+                  <td style={styles.td}>{p.status}</td>
+                  <td style={styles.td}>{formatDate(p.tanggal)}</td>
+                  <td style={styles.td}>{p.klien}</td>
+                  <td style={styles.td}>{p.deskripsi}</td>
+                  <td style={styles.td}>
+                    Rp {Math.abs(p.saldo).toLocaleString()}
+                  </td>
+                  <td style={styles.td}>
+                    <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+                      <button
+                        style={styles.btnPrimary}
+                        onClick={() => navigate(`/piutang/${p.id_utang_piutang}`)}
+                      >
+                        Detail
+                      </button>
+
+                      <button
+                        style={styles.btnDanger}
+                        onClick={() => handleDelete(p.id_utang_piutang)}
+                      >
+                        Hapus
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* MODAL tetap sama (tidak diubah logic kamu) */}
+      {/* MODAL */}
       {modal && (
         <div style={styles.modal}>
           <div style={styles.modalBox}>
@@ -330,7 +329,6 @@ function SummaryCard({ title, value, plain, numberOnly }) {
       <h4>{title}</h4>
 
       {plain && <h3>{value}</h3>}
-
       {numberOnly && <h2>{value}</h2>}
 
       {!plain && !numberOnly && (
@@ -341,42 +339,52 @@ function SummaryCard({ title, value, plain, numberOnly }) {
 }
 
 const styles = {
-  th: { textAlign: "center", padding: 10 },
-  td: { textAlign: "center", padding: 10 },
+  th: { textAlign: "center", padding: 8, whiteSpace: "nowrap" },
+  td: { textAlign: "center", padding: 8, whiteSpace: "nowrap" },
+
   summaryGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))",
-    gap: 20,
+    gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))",
+    gap: 12,
     marginBottom: 20,
   },
+
   card: {
     background: "#fff",
-    padding: 20,
+    padding: 16,
     borderRadius: 12,
     boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
   },
+
   filterRow: {
     display: "flex",
     gap: 10,
     marginBottom: 20,
     flexWrap: "wrap",
+    alignItems: "center",
   },
+
   tableCard: {
     background: "#fff",
-    padding: 20,
+    padding: 12,
     borderRadius: 12,
     boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
   },
+
   table: {
     width: "100%",
+    minWidth: 650,
     borderCollapse: "collapse",
+    fontSize: 13,
   },
+
   input: {
     padding: 8,
     borderRadius: 6,
     border: "1px solid #ccc",
-    color: "#fff"
+    flex: "1 1 140px",
   },
+
   btnPrimary: {
     background: "#1976d2",
     color: "#fff",
@@ -385,6 +393,7 @@ const styles = {
     borderRadius: 6,
     cursor: "pointer",
   },
+
   btnSuccess: {
     background: "#2e7d32",
     color: "#fff",
@@ -393,6 +402,7 @@ const styles = {
     borderRadius: 6,
     cursor: "pointer",
   },
+
   btnDanger: {
     background: "#d32f2f",
     color: "#fff",
@@ -401,6 +411,7 @@ const styles = {
     borderRadius: 6,
     cursor: "pointer",
   },
+
   modal: {
     position: "fixed",
     inset: 0,
@@ -409,13 +420,15 @@ const styles = {
     justifyContent: "center",
     alignItems: "center",
   },
+
   modalBox: {
     background: "#fff",
-    padding: 20,
+    padding: 16,
     borderRadius: 12,
-    width: 350,
+    width: "90%",
+    maxWidth: 400,
     display: "flex",
     flexDirection: "column",
     gap: 10,
   },
-};  
+};

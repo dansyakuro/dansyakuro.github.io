@@ -142,15 +142,18 @@ export default function DetailPiutang() {
     let nominal = parseInt(form.nominal || 0);
 
     let id_tipe_transaksi = 2;
+    let tipe = "Pengeluaran";
 
     if (modal === "Tambah") {
       nominal = -Math.abs(nominal);
       id_tipe_transaksi = 2;
+      tipe = "Pengeluaran";
     }
 
     if (modal === "Bayar") {
       nominal = Math.abs(nominal);
       id_tipe_transaksi = 1;
+      tipe = "Pemasukan";
     }
 
     if (modal === "Edit") {
@@ -190,6 +193,7 @@ export default function DetailPiutang() {
           .update({
             id_buku: form.id_buku,
             id_kategori: form.id_kategori,
+            tipe: tipe,
             nominal: parseInt(Math.abs(nominal)),
             deskripsi: form.deskripsi,
             tanggal: form.tanggal,
@@ -211,6 +215,7 @@ export default function DetailPiutang() {
           .insert([{
             id_buku: form.id_buku,
             id_kategori: form.id_kategori,
+            tipe: tipe,
             nominal: parseInt(Math.abs(nominal)),
             deskripsi: form.deskripsi,
             tanggal: form.tanggal,
@@ -337,15 +342,18 @@ export default function DetailPiutang() {
                 </td>
 
                 <td style={styles.td}>
-                  <button style={styles.btnPrimary} onClick={() => openEdit(t)}>
-                    Edit
-                  </button>
-
-                  {i !== 0 && (
-                    <button style={styles.btnDanger} onClick={() => handleDelete(t)}>
-                      Hapus
+                  
+                  <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+                    <button style={styles.btnPrimary} onClick={() => openEdit(t)}>
+                      Edit
                     </button>
-                  )}
+
+                    {i !== 0 && (
+                      <button style={styles.btnDanger} onClick={() => handleDelete(t)}>
+                        Hapus
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
