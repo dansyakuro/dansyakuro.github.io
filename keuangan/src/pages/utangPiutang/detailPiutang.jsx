@@ -466,29 +466,29 @@ export default function DetailPiutang() {
 function Card({ title, value, plain }) {
   return (
     <div style={styles.card}>
-      <h4>{title}</h4>
+      <h4 style={{ fontSize: 12, marginBottom: 4 }}>{title}</h4>
       {plain
-        ? <h3>{value}</h3>
-        : <h3>Rp {Number(value || 0).toLocaleString()}</h3>
+        ? <h3 style={{ fontSize: 16 }}>{value}</h3>
+        : <h3 style={{ fontSize: 16 }}>Rp {Number(value || 0).toLocaleString()}</h3>
       }
     </div>
   );
 }
 
 const styles = {
-  th: { textAlign: "center", padding: 10 },
-  td: { textAlign: "center", padding: 10 },
+  th: { textAlign: "center", padding: 8, fontSize: 12 },
+  td: { textAlign: "center", padding: 8, fontSize: 12 },
 
   summaryGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))",
-    gap: 20,
+    gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+    gap: 12,
     marginBottom: 20,
   },
 
   card: {
     background: "#fff",
-    padding: 20,
+    padding: 14,
     borderRadius: 12,
   },
 
@@ -496,12 +496,14 @@ const styles = {
     display: "flex",
     gap: 10,
     marginBottom: 20,
+    flexWrap: "wrap",
   },
 
   tableCard: {
     background: "#fff",
-    padding: 20,
+    padding: 12,
     borderRadius: 12,
+    overflowX: "auto",
   },
 
   table: {
@@ -521,8 +523,18 @@ const styles = {
     background: "#1976d2",
     color: "#fff",
     border: "none",
-    padding: "8px 14px",
+    padding: "6px 10px",
     borderRadius: 6,
+    fontSize: 12,
+  },
+  
+  btnDanger: {
+    background: "#d32f2f",
+    color: "#fff",
+    border: "none",
+    padding: "6px 10px",
+    borderRadius: 6,
+    fontSize: 12,
   },
 
   btnSuccess: {
@@ -531,14 +543,7 @@ const styles = {
     border: "none",
     padding: "8px 14px",
     borderRadius: 6,
-  },
-
-  btnDanger: {
-    background: "#d32f2f",
-    color: "#fff",
-    border: "none",
-    padding: "8px 14px",
-    borderRadius: 6,
+    fontSize: 12,
   },
 
   modal: {
@@ -552,9 +557,10 @@ const styles = {
 
   modalBox: {
     background: "#fff",
-    padding: 20,
+    padding: 16,
     borderRadius: 12,
-    width: 350,
+    width: "90%",
+    maxWidth: 400,
     display: "flex",
     flexDirection: "column",
     gap: 10,

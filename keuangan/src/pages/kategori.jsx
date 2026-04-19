@@ -107,18 +107,21 @@ export default function Kategori() {
                   <tr key={k.id_kategori}>
                     <td style={styles.td}>{k.nama_kategori}</td>
                     <td style={styles.td}>
-                      <button
-                        style={styles.btnPrimary}
-                        onClick={() => openModal(1, k)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        style={styles.btnDanger}
-                        onClick={() => hapus(k.id_kategori)}
-                      >
-                        Hapus
-                      </button>
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        <button
+                          style={styles.btnPrimary}
+                          onClick={() => openModal(1, k)}
+                        >
+                          Edit
+                        </button>
+
+                        <button
+                          style={styles.btnDanger}
+                          onClick={() => hapus(k.id_kategori)}
+                        >
+                          Hapus
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -158,18 +161,21 @@ export default function Kategori() {
                   <tr key={k.id_kategori}>
                     <td style={styles.td}>{k.nama_kategori}</td>
                     <td style={styles.td}>
-                      <button
-                        style={styles.btnPrimary}
-                        onClick={() => openModal(2, k)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        style={styles.btnDanger}
-                        onClick={() => hapus(k.id_kategori)}
-                      >
-                        Hapus
-                      </button>
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        <button
+                          style={styles.btnPrimary}
+                          onClick={() => openModal(1, k)}
+                        >
+                          Edit
+                        </button>
+
+                        <button
+                          style={styles.btnDanger}
+                          onClick={() => hapus(k.id_kategori)}
+                        >
+                          Hapus
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -222,13 +228,13 @@ const styles = {
 
   grid: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: 20,
+    gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+    gap: 16,
   },
 
   card: {
     background: "#fff",
-    padding: 20,
+    padding: 14,
     borderRadius: 12,
     boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
   },
@@ -238,6 +244,8 @@ const styles = {
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 10,
+    flexWrap: "wrap",
+    gap: 8,
   },
 
   table: {
@@ -247,13 +255,15 @@ const styles = {
 
   th: {
     textAlign: "left",
-    padding: "10px",
+    padding: "8px",
     borderBottom: "2px solid #ddd",
+    fontSize: 12,
   },
-
+  
   td: {
-    padding: "10px",
+    padding: "8px",
     borderBottom: "1px solid #eee",
+    fontSize: 12,
   },
 
   input: {
@@ -268,29 +278,30 @@ const styles = {
     background: "#1976d2",
     color: "#fff",
     border: "none",
-    padding: "6px 10px",
+    padding: "5px 8px",
     borderRadius: 6,
     cursor: "pointer",
-    marginRight: 5,
+    fontSize: 12,
   },
-
+  
   btnSuccess: {
-    background: "#2e7d32", // ✅ semua tambah hijau
+    background: "#2e7d32",
     color: "#fff",
     border: "none",
-    padding: "6px 10px",
+    padding: "5px 8px",
     borderRadius: 6,
     cursor: "pointer",
+    fontSize: 12,
   },
-
+  
   btnDanger: {
     background: "#d32f2f",
     color: "#fff",
     border: "none",
-    padding: "6px 10px",
+    padding: "5px 8px",
     borderRadius: 6,
     cursor: "pointer",
-    marginRight: 5,
+    fontSize: 12,
   },
 
   modal: {
@@ -304,9 +315,10 @@ const styles = {
 
   modalBox: {
     background: "#fff",
-    padding: 20,
+    padding: 16,
     borderRadius: 12,
-    width: 300,
+    width: "90%",
+    maxWidth: 350,
     display: "flex",
     flexDirection: "column",
     gap: 10,

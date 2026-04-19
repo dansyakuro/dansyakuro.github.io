@@ -15,6 +15,9 @@ export default function Piutang() {
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState({});
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
   const [summary, setSummary] = useState({
     total: 0,
     jumlah: 0,
@@ -25,10 +28,15 @@ export default function Piutang() {
   }, []);
 
   function formatDate(val) {
-    if (!val) return "-";
     const d = new Date(val);
-    if (isNaN(d.getTime())) return "-";
-    return d.toLocaleDateString("id-ID");
+  
+    const day = String(d.getUTCDate()).padStart(2, "0");
+    const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+    const year = String(d.getUTCFullYear()).slice(2);
+    const hour = String(d.getUTCHours()).padStart(2, "0");
+    const minute = String(d.getUTCMinutes()).padStart(2, "0");
+  
+    return `${day}/${month}/${year}, ${hour}:${minute}`;
   }
 
   async function fetchData() {
@@ -165,6 +173,16 @@ export default function Piutang() {
       .slice(0, showEntries);
   }, [data, search, showEntries]);
 
+
+
+  const totalData = filtered.length;
+  const totalPages = Math.ceil(totalData / rowsPerPage);
+
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const endIndex = startIndex + rowsPerPage;
+
+  const currentData = filtered.slice(startIndex, endIndex);
+
   return (
     <div>
 
@@ -174,25 +192,36 @@ export default function Piutang() {
         <SummaryCard title="Jumlah Pengutang" numberOnly value={summary.jumlah} />
         <SummaryCard title="Total Saldo Piutang" value={Math.abs(summary.total)} />
       </div>
-
+      <div style={{ marginBottom: 10, fontSize: 12 }}>
+        {filtered.length > 0
+          ? `Menampilkan ${filtered.length} dari ${data.length} data`
+          : "Tidak ada data"}
+      </div>
       {/* FILTER */}
       <div style={styles.filterRow}>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: 12, color: "#aaa" }}>Rows</span>
+          <select
+            style={styles.input}
+            value={rowsPerPage}
+            onChange={(e) => {
+              setRowsPerPage(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+          >
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+            <option value={50}>50</option>
+            <option value={100}>50</option>
+          </select>
+        </div>
         <input
           style={styles.input}
           placeholder="Cari klien..."
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
-
-        <select
-          style={styles.input}
-          value={showEntries}
-          onChange={e => setShowEntries(Number(e.target.value))}
-        >
-          {[5, 10, 25, 50].map(n => (
-            <option key={n}>{n}</option>
-          ))}
-        </select>
 
         <div style={{ marginLeft: "auto" }}>
           <button style={styles.btnSuccess} onClick={() => setModal(true)}>
@@ -203,7 +232,7 @@ export default function Piutang() {
 
       {/* TABLE */}
       <div style={styles.tableCard}>
-        <div style={{ overflowX: "auto" }}>
+        <div style={styles.tableWrapper}>
           <table style={styles.table}>
             <thead>
               <tr>
@@ -216,7 +245,7 @@ export default function Piutang() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(p => (
+              {currentData.map(p => (
                 <tr key={p.id_utang_piutang}>
                   <td style={styles.td}>{p.status}</td>
                   <td style={styles.td}>{formatDate(p.tanggal)}</td>
@@ -246,6 +275,40 @@ export default function Piutang() {
               ))}
             </tbody>
           </table>
+          {totalPages > 0 && (
+          <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }}>
+
+            <button
+              style={styles.btnPrimary}
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(currentPage - 1)}
+            >
+              Prev
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentPage(i + 1)}
+                style={{
+                  ...styles.btnPrimary,
+                  background: currentPage === i + 1 ? "#555" : "#1976d2"
+                }}
+              >
+                {i + 1}
+              </button>
+            ))}
+
+            <button
+              style={styles.btnPrimary}
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(currentPage + 1)}
+            >
+              Next
+            </button>
+
+          </div>
+          )}
         </div>
       </div>
 
@@ -339,29 +402,31 @@ function SummaryCard({ title, value, plain, numberOnly }) {
 }
 
 const styles = {
-  th: { textAlign: "center", padding: 8, whiteSpace: "nowrap" },
-  td: { textAlign: "center", padding: 8, whiteSpace: "nowrap" },
-
   summaryGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))",
-    gap: 12,
+    gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))",
+    gap: 10,
     marginBottom: 20,
   },
-
   card: {
     background: "#fff",
-    padding: 16,
-    borderRadius: 12,
+    padding: 14,
+    borderRadius: 10,
     boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+    fontSize: 13
   },
 
   filterRow: {
     display: "flex",
-    gap: 10,
+    gap: 8,
     marginBottom: 20,
     flexWrap: "wrap",
-    alignItems: "center",
+    alignItems: "center"
+  },
+
+  tableWrapper: {
+    width: "100%",
+    overflowX: "auto",
   },
 
   tableCard: {
@@ -373,16 +438,32 @@ const styles = {
 
   table: {
     width: "100%",
-    minWidth: 650,
+    minWidth: 700,
     borderCollapse: "collapse",
-    fontSize: 13,
+    fontSize: 12,
+  },
+  th: {
+    textAlign: "center",
+    padding: 8,
+    fontSize: 12,
+    whiteSpace: "nowrap"
+  },
+  td: {
+    textAlign: "center",
+    padding: 8,
+    fontSize: 12,
+    whiteSpace: "nowrap"
   },
 
   input: {
     padding: 8,
     borderRadius: 6,
     border: "1px solid #ccc",
-    flex: "1 1 140px",
+    fontSize: 13,
+    minWidth: 120,
+    flex: 1,
+    background: "#2c2c2c",
+    color: "#fff"
   },
 
   btnPrimary: {
