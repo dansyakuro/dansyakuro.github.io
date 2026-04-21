@@ -10,13 +10,14 @@ export default function Piutang() {
   const [kategori, setKategori] = useState([]);
 
   const [search, setSearch] = useState("");
-  const [showEntries, setShowEntries] = useState(10);
 
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState({});
 
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  const [statusFilter, setStatusFilter] = useState("");
 
   const [summary, setSummary] = useState({
     total: 0,
@@ -26,6 +27,9 @@ export default function Piutang() {
   useEffect(() => {
     fetchData();
   }, []);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
 
   function formatDate(val) {
     const d = new Date(val);
@@ -63,8 +67,12 @@ export default function Piutang() {
         tanggal: trx[0]?.tanggal || null,
       };
     });
-
-    setData(clean);
+    
+    setData(
+      clean.sort((a, b) =>
+        (a.klien || "").localeCompare(b.klien || "")
+      )
+    );
 
     setSummary({
       jumlah: clean.length,
@@ -168,12 +176,16 @@ export default function Piutang() {
   }
 
   const filtered = useMemo(() => {
-    return data
-      .filter(d => d.klien?.toLowerCase().includes(search.toLowerCase()))
-      .slice(0, showEntries);
-  }, [data, search, showEntries]);
-
-
+    return data.filter(p => {
+      const matchSearch =
+        (p.klien || "").toLowerCase().includes(search.toLowerCase());
+  
+      const matchStatus =
+        !statusFilter || p.status === statusFilter;
+  
+      return matchSearch && matchStatus;
+    });
+  }, [data, search, statusFilter]);
 
   const totalData = filtered.length;
   const totalPages = Math.ceil(totalData / rowsPerPage);
@@ -182,6 +194,27 @@ export default function Piutang() {
   const endIndex = startIndex + rowsPerPage;
 
   const currentData = filtered.slice(startIndex, endIndex);
+
+  function getPages() {
+    const pages = [];
+  
+    if (totalPages <= 5) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+  
+    let start = Math.max(currentPage - 2, 1);
+    let end = Math.min(start + 4, totalPages);
+  
+    if (end - start < 4) {
+      start = end - 4;
+    }
+  
+    if (start > 1) pages.push("...");
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (end < totalPages) pages.push("...");
+  
+    return pages;
+  }
 
   return (
     <div>
@@ -213,9 +246,23 @@ export default function Piutang() {
             <option value={10}>10</option>
             <option value={20}>20</option>
             <option value={50}>50</option>
-            <option value={100}>50</option>
+            <option value={100}>100</option>
           </select>
         </div>
+
+        <select
+          style={styles.input}
+          value={statusFilter}
+          onChange={(e) => {
+            setStatusFilter(e.target.value);
+            setCurrentPage(1);
+          }}
+        >
+          <option value="">Semua Status</option>
+          <option value="Belum Lunas">Belum Lunas</option>
+          <option value="Lunas">Lunas</option>
+        </select>
+
         <input
           style={styles.input}
           placeholder="Cari klien..."
@@ -236,23 +283,28 @@ export default function Piutang() {
           <table style={styles.table}>
             <thead>
               <tr>
-                <th style={styles.th}>Status</th>
-                <th style={styles.th}>Tanggal</th>
-                <th style={styles.th}>Klien</th>
-                <th style={styles.th}>Deskripsi</th>
-                <th style={styles.th}>Saldo</th>
-                <th style={styles.th}>Aksi</th>
+                <th>Klien</th>
+                <th>Tanggal</th>
+                <th>Deskripsi</th>
+                <th>Saldo</th>
+                <th>Status</th>
+                <th>Aksi</th>
               </tr>
             </thead>
             <tbody>
               {currentData.map(p => (
                 <tr key={p.id_utang_piutang}>
-                  <td style={styles.td}>{p.status}</td>
-                  <td style={styles.td}>{formatDate(p.tanggal)}</td>
                   <td style={styles.td}>{p.klien}</td>
+                  <td style={styles.td}>{formatDate(p.tanggal)}</td>
                   <td style={styles.td}>{p.deskripsi}</td>
                   <td style={styles.td}>
                     Rp {Math.abs(p.saldo).toLocaleString()}
+                  </td>
+                  <td style={{
+                    ...styles.td,
+                    color: p.status === "Lunas" ? "green" : "orange",
+                  }}>
+                    {p.status}
                   </td>
                   <td style={styles.td}>
                     <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
@@ -286,16 +338,18 @@ export default function Piutang() {
               Prev
             </button>
 
-            {Array.from({ length: totalPages }, (_, i) => (
+            {getPages().map((p, i) => (
               <button
                 key={i}
-                onClick={() => setCurrentPage(i + 1)}
+                disabled={p === "..."}
+                onClick={() => p !== "..." && setCurrentPage(p)}
                 style={{
                   ...styles.btnPrimary,
-                  background: currentPage === i + 1 ? "#555" : "#1976d2"
+                  background: currentPage === p ? "#555" : "#1976d2",
+                  cursor: p === "..." ? "default" : "pointer"
                 }}
               >
-                {i + 1}
+                {p}
               </button>
             ))}
 
@@ -470,9 +524,10 @@ const styles = {
     background: "#1976d2",
     color: "#fff",
     border: "none",
-    padding: "8px 14px",
+    padding: "6px 10px",
     borderRadius: 6,
     cursor: "pointer",
+    fontSize: 12,
   },
 
   btnSuccess: {

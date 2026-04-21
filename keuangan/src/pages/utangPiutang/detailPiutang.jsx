@@ -12,8 +12,14 @@ export default function DetailPiutang() {
   const [kategori, setKategori] = useState([]);
 
   const [modal, setModal] = useState(null);
-  const [form, setForm] = useState({});
+  const [form, setForm] = useState({
+    nama: "",
+    nominal: "",
+    tanggal_tempo: null,
+  });
   const [editId, setEditId] = useState(null);
+
+  const [useTempo, setUseTempo] = useState(false);
 
   // ✅ LOAD DATA AWAL
     useEffect(() => {
@@ -34,10 +40,15 @@ export default function DetailPiutang() {
   }, [modal, editId, form.catatKas]);
 
   function formatDate(val) {
-    if (!val) return "-";
-    const d = new Date(val.replace("T", " "));
-    if (isNaN(d.getTime())) return "-";
-    return d.toLocaleDateString("id-ID");
+    const d = new Date(val);
+  
+    const day = String(d.getUTCDate()).padStart(2, "0");
+    const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+    const year = String(d.getUTCFullYear()).slice(2);
+    const hour = String(d.getUTCHours()).padStart(2, "0");
+    const minute = String(d.getUTCMinutes()).padStart(2, "0");
+  
+    return `${day}/${month}/${year}, ${hour}:${minute}`;
   }
 
   async function fetchData() {
@@ -65,6 +76,31 @@ export default function DetailPiutang() {
       .eq("id_user", user.id);
 
     setBukuList(buku || []);
+  }
+  
+  async function updateStatus() {
+    const { data: trx } = await supabase
+      .from("tbl_transaksi_utang_piutang")
+      .select("nominal")
+      .eq("id_utang_piutang", id);
+  
+    const saldo = (trx || []).reduce((a, b) => a + (b.nominal * -1), 0);
+  
+    let status = "Belum Lunas";
+    let tanggal_tempo = header?.tanggal_tempo || null;
+  
+    if (saldo === 0) {
+      status = "Lunas";
+      tanggal_tempo = null; // 🔥 hapus jatuh tempo kalau sudah lunas
+    }
+  
+    await supabase
+      .from("tbl_utang_piutang")
+      .update({
+        status,
+        tanggal_tempo
+      })
+      .eq("id_utang_piutang", id);
   }
 
   async function fetchKategori(tipe) {
@@ -100,6 +136,7 @@ export default function DetailPiutang() {
     setModal(type);
     setForm({});
     setEditId(null);
+    setUseTempo(false);
 
     if (type === "Tambah") fetchKategori(2);
     if (type === "Bayar") fetchKategori(1);
@@ -181,6 +218,13 @@ export default function DetailPiutang() {
 
     const existing = data.find(x => x.id === editId);
     let id_buku_transaksi = existing?.id_buku_transaksi || null;
+
+    // 🔥 HANDLE TANGGAL TEMPO (FIX DI SINI)
+    let tanggal_tempo = header?.tanggal_tempo || null;
+
+    if (modal === "Tambah") {
+      tanggal_tempo = useTempo ? form.tanggal_tempo : null;
+    }
     
 
     // 🔥 HANDLE KAS
@@ -264,10 +308,22 @@ export default function DetailPiutang() {
       }]);
     }
 
+    // 🔥 UPDATE HEADER TEMPO
+    if (modal === "Tambah") {
+      await supabase
+        .from("tbl_utang_piutang")
+        .update({
+          tanggal_tempo: tanggal_tempo
+        })
+        .eq("id_utang_piutang", id);
+    }
+
     setModal(null);
     setForm({});
     setEditId(null);
+    await updateStatus();
     fetchData();
+    setUseTempo(false);
   }
 
   async function handleDelete(item) {
@@ -284,7 +340,7 @@ export default function DetailPiutang() {
         .update({ is_hidden: true })
         .eq("id", item.id_buku_transaksi);
     }
-
+    await updateStatus();
     fetchData();
   }
 
@@ -370,6 +426,37 @@ export default function DetailPiutang() {
               value={form.tanggal || ""}
               onChange={e => setForm({ ...form, tanggal: e.target.value })}
             />
+
+            {modal === "Tambah" && (
+              <>
+                <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <input
+                    type="checkbox"
+                    checked={useTempo}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setUseTempo(checked);
+
+                      if (!checked) {
+                        setForm({ ...form, tanggal_tempo: null });
+                      }
+                    }}
+                  />
+                  Pakai Tanggal Tempo
+                </label>
+
+                {useTempo && (
+                  <input
+                    style={styles.input}
+                    type="date"
+                    value={form.tanggal_tempo || ""}
+                    onChange={(e) =>
+                      setForm({ ...form, tanggal_tempo: e.target.value })
+                    }
+                  />
+                )}
+              </>
+            )}
 
             <input style={styles.input} type="number"
               placeholder="Nominal"

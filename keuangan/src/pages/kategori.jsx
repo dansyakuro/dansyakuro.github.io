@@ -16,7 +16,7 @@ export default function Kategori() {
     const { data } = await supabase
       .from("tbl_kategori")
       .select("*")
-      .order("id_kategori", { ascending: true });
+      .order("nama_kategori", { ascending: true });
 
     setPemasukan(data?.filter(d => d.id_tipe_transaksi === 1) || []);
     setPengeluaran(data?.filter(d => d.id_tipe_transaksi === 2) || []);
@@ -164,7 +164,7 @@ export default function Kategori() {
                       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                         <button
                           style={styles.btnPrimary}
-                          onClick={() => openModal(1, k)}
+                          onClick={() => openModal(2, k)}
                         >
                           Edit
                         </button>

@@ -121,7 +121,27 @@ export default function BukuKasIndex() {
     const tanggal = form.tanggal || new Date();
 
     if (modal === "Transfer") {
+      
       const nominal = parseInt(form.nominal);
+      if (editId) {
+
+        const { data: list } = await supabase
+          .from("tbl_buku_transaksi")
+          .select("*")
+          .eq("kode_transfer", transaksi.find(t => t.id === editId)?.kode_transfer);
+
+        for (const t of list) {
+          await supabase
+            .from("tbl_buku_transaksi")
+            .update({
+              nominal,
+              deskripsi: form.deskripsi,
+              tanggal,
+            })
+            .eq("id", t.id);
+        }
+
+      } else {
 
       const { data: trxKeluar } = await supabase
         .from("tbl_buku_transaksi")
@@ -155,6 +175,7 @@ export default function BukuKasIndex() {
         .from("tbl_buku_transaksi")
         .update({ kode_transfer: kode })
         .in("id", [trxKeluar.id, trxMasuk.id]);
+      }
 
     } else {
       if (editId) {
@@ -187,14 +208,30 @@ export default function BukuKasIndex() {
 
   function handleEdit(trx) {
     setEditId(trx.id);
-    setModal(trx.tipe);
-
-    setForm({
-      tanggal: trx.tanggal?.slice(0, 16),
-      nominal: trx.nominal,
-      deskripsi: trx.deskripsi,
-      id_kategori: trx.id_kategori,
-    });
+  
+    if (trx.kode_transfer) {
+      setModal("Transfer");
+  
+      const [dari, ke] = trx.kode_transfer.split("-")[0].split("_");
+  
+      setForm({
+        tanggal: trx.tanggal?.slice(0, 16),
+        nominal: trx.nominal,
+        deskripsi: trx.deskripsi,
+        dari_buku: dari,
+        ke_buku: ke,
+      });
+  
+    } else {
+      setModal(trx.tipe);
+  
+      setForm({
+        tanggal: trx.tanggal?.slice(0, 16),
+        nominal: trx.nominal,
+        deskripsi: trx.deskripsi,
+        id_kategori: trx.id_kategori,
+      });
+    }
   }
 
   function formatTanggal(val) {
@@ -253,10 +290,10 @@ export default function BukuKasIndex() {
       const matchBulan =
         bulan === "Semua"
           ? true
-          : tgl.getMonth() + 1 === Number(bulan);
-
+          : tgl.getUTCMonth() + 1 === Number(bulan);
+      
       const matchTahun =
-        !tahun ? true : tgl.getFullYear() === Number(tahun);
+        !tahun ? true : tgl.getUTCFullYear() === Number(tahun);
 
       return matchSearch && matchTipe && matchBulan && matchTahun;
     });
@@ -269,6 +306,26 @@ export default function BukuKasIndex() {
   const endIndex = startIndex + rowsPerPage;
 
   const currentData = filtered.slice(startIndex, endIndex);
+  function getPages() {
+    const pages = [];
+  
+    if (totalPages <= 5) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+  
+    let start = Math.max(currentPage - 2, 1);
+    let end = Math.min(start + 4, totalPages);
+  
+    if (end - start < 4) {
+      start = end - 4;
+    }
+  
+    if (start > 1) pages.push("...");
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (end < totalPages) pages.push("...");
+  
+    return pages;
+  }
 
   return (
     <div>
@@ -301,7 +358,7 @@ export default function BukuKasIndex() {
             <option value={10}>10</option>
             <option value={20}>20</option>
             <option value={50}>50</option>
-            <option value={100}>50</option>
+            <option value={100}>100</option>
           </select>
         </div>
         <select style={styles.input} value={tipe} onChange={e => setTipe(e.target.value)}>
@@ -350,7 +407,20 @@ export default function BukuKasIndex() {
               {currentData.map(trx => (
                 <tr key={trx.id}>
                   <td style={styles.td}>
-                    {trx.tipe === "Pemasukan" ? "+" : trx.id_kategori === 1 ? "↔" : "-"}
+                    <span style={{
+                      padding: "4px 8px",
+                      borderRadius: 6,
+                      fontSize: 12,
+                      background:
+                        trx.kode_transfer
+                          ? "#6a1b9a"
+                          : trx.tipe === "Pemasukan"
+                          ? "#2e7d32"
+                          : "#d32f2f",
+                      color: "#fff"
+                    }}>
+                      {trx.kode_transfer ? "↔" : trx.tipe === "Pemasukan" ? "+" : "-"}
+                    </span>
                   </td>
                   <td style={styles.td}>{formatTanggal(trx.tanggal)}</td>
                   <td style={styles.td}>
@@ -387,16 +457,18 @@ export default function BukuKasIndex() {
               Prev
             </button>
 
-            {Array.from({ length: totalPages }, (_, i) => (
+            {getPages().map((p, i) => (
               <button
                 key={i}
-                onClick={() => setCurrentPage(i + 1)}
+                disabled={p === "..."}
+                onClick={() => p !== "..." && setCurrentPage(p)}
                 style={{
                   ...styles.btnPrimary,
-                  background: currentPage === i + 1 ? "#555" : "#1976d2"
+                  background: currentPage === p ? "#555" : "#1976d2",
+                  cursor: p === "..." ? "default" : "pointer"
                 }}
               >
-                {i + 1}
+                {p}
               </button>
             ))}
 
