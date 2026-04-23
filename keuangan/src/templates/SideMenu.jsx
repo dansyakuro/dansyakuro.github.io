@@ -20,7 +20,7 @@ export default function SideMenu({ open, isMobile }) {
     const { data } = await supabase
       .from("tbl_buku")
       .select("id_buku, nama")
-      .order("created_at", { ascending: false });
+      .order("nama", { ascending: true });
 
     if (data) setBukuList(data);
   }
@@ -70,6 +70,7 @@ export default function SideMenu({ open, isMobile }) {
 
           {collapse.buku && (
             <>
+              {/* Daftar Buku */}
               <li>
                 <Link
                   to="/buku/daftar"
@@ -84,6 +85,22 @@ export default function SideMenu({ open, isMobile }) {
                 </Link>
               </li>
 
+              {/* 🔥 Semua Buku */}
+              <li>
+                <Link
+                  to="/buku/semua"
+                  onClick={handleLinkClick}
+                  style={
+                    isActive("/buku/semua")
+                      ? styles.activeSub
+                      : styles.sub
+                  }
+                >
+                  Semua Buku
+                </Link>
+              </li>
+
+              {/* List Buku (sudah urut abjad dari query) */}
               {bukuList.map((buku) => (
                 <li key={buku.id_buku}>
                   <Link

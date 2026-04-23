@@ -198,15 +198,15 @@ export default function Piutang() {
   function getPages() {
     const pages = [];
   
-    if (totalPages <= 5) {
+    if (totalPages <= 4) {
       return Array.from({ length: totalPages }, (_, i) => i + 1);
     }
   
     let start = Math.max(currentPage - 2, 1);
-    let end = Math.min(start + 4, totalPages);
+    let end = Math.min(start + 3, totalPages);
   
-    if (end - start < 4) {
-      start = end - 4;
+    if (end - start < 3) {
+      start = end - 3;
     }
   
     if (start > 1) pages.push("...");

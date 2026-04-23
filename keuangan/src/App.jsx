@@ -8,6 +8,7 @@ import "./App.css";
 // Pages
 import Dashboard from "./pages/dashboard";
 import BukuDaftar from "./pages/bukuKas/daftar";
+import BukuSemua from "./pages/bukuKas/semua";
 import BukuIndex from "./pages/bukuKas/index";
 import Utang from "./pages/utangPiutang/utang";
 import Piutang from "./pages/utangPiutang/piutang";
@@ -65,6 +66,7 @@ export default function App() {
 
           {/* Buku Kas */}
           <Route path="buku/daftar" element={<BukuDaftar />} />
+          <Route path="buku/semua" element={<BukuSemua />} />
           <Route path="buku/:id_buku" element={<BukuIndex />} />
 
           {/* Utang Piutang */}
