@@ -46,8 +46,8 @@ export default function DaftarBuku() {
         id_buku,
         nominal,
         tipe
-      `) // ⬅️ GANTI INI kalau nama kolom beda
-      .eq("is_hidden", false);
+      `); // ⬅️ GANTI INI kalau nama kolom beda
+      //.eq("is_hidden", false);
 
     if (trxErr) {
       console.error("trx error:", trxErr);
@@ -430,6 +430,7 @@ const styles = {
     cursor: "pointer",
   },
   btnDefault: {
+    fontSize: 12,
     background: "#2e7d32",
     color: "#fff",
     border: "none",

@@ -12,6 +12,8 @@ export default function DetailPiutang() {
   const [kategori, setKategori] = useState([]);
 
   const [modal, setModal] = useState(null);
+  const [loadingSave, setLoadingSave] = useState(false);
+  
   const [form, setForm] = useState({
     nama: "",
     nominal: "",
@@ -175,155 +177,166 @@ export default function DetailPiutang() {
   }
 
   async function save() {
-    const user = (await supabase.auth.getUser()).data.user;
-    let nominal = parseInt(form.nominal || 0);
+    if (loadingSave) return; // cegah spam klik
+    setLoadingSave(true);
 
-    let id_tipe_transaksi = 2;
-    let tipe = "Pengeluaran";
+    try {
+      const user = (await supabase.auth.getUser()).data.user;
+      let nominal = parseInt(form.nominal || 0);
 
-    if (modal === "Tambah") {
-      nominal = -Math.abs(nominal);
-      id_tipe_transaksi = 2;
-      tipe = "Pengeluaran";
-    }
+      let id_tipe_transaksi = 2;
+      let tipe = "Pengeluaran";
 
-    if (modal === "Bayar") {
-      nominal = Math.abs(nominal);
-      id_tipe_transaksi = 1;
-      tipe = "Pemasukan";
-    }
-
-    if (modal === "Edit") {
-      const existing = data.find(x => x.id === editId);
-      if (existing) {
-        id_tipe_transaksi = existing.nominal < 0 ? 2 : 1;
-        nominal = existing.nominal < 0
-          ? -Math.abs(nominal)
-          : Math.abs(nominal);
+      if (modal === "Tambah") {
+        nominal = -Math.abs(nominal);
+        id_tipe_transaksi = 2;
+        tipe = "Pengeluaran";
       }
-    }
 
-    if (form.catatKas) {
-        const id_buku = parseInt(form.id_buku);
-        const id_kategori = parseInt(form.id_kategori);
-      
-        if (!id_buku || !id_kategori) {
-          alert("Buku & Kategori wajib dipilih");
-          return;
+      if (modal === "Bayar") {
+        nominal = Math.abs(nominal);
+        id_tipe_transaksi = 1;
+        tipe = "Pemasukan";
+      }
+
+      if (modal === "Edit") {
+        const existing = data.find(x => x.id === editId);
+        if (existing) {
+          id_tipe_transaksi = existing.nominal < 0 ? 2 : 1;
+          nominal = existing.nominal < 0
+            ? -Math.abs(nominal)
+            : Math.abs(nominal);
         }
-      
-        form.id_buku = id_buku;
-        form.id_kategori = id_kategori;
       }
 
-    const existing = data.find(x => x.id === editId);
-    let id_buku_transaksi = existing?.id_buku_transaksi || null;
-
-    // 🔥 HANDLE TANGGAL TEMPO (FIX DI SINI)
-    let tanggal_tempo = header?.tanggal_tempo || null;
-
-    if (modal === "Tambah") {
-      tanggal_tempo = useTempo ? form.tanggal_tempo : null;
-    }
-    
-
-    // 🔥 HANDLE KAS
-    if (form.catatKas) {
-
-      if (modal === "Edit" && existing?.id_buku_transaksi) {
-
-        const { error } = await supabase
-          .from("tbl_buku_transaksi")
-          .update({
-            id_buku: form.id_buku,
-            id_kategori: form.id_kategori,
-            tipe: tipe,
-            nominal: parseInt(Math.abs(nominal)),
-            deskripsi: form.deskripsi,
-            tanggal: form.tanggal,
-          })
-          .eq("id", existing.id_buku_transaksi);
-
-          if (error) {
-            console.error("❌ UPDATE KAS ERROR:", error);
-            alert(error.message);
-            return;
+      if (form.catatKas) {
+          const id_buku = parseInt(form.id_buku);
+          const id_kategori = parseInt(form.id_kategori);
+        
+          if (!id_buku || !id_kategori) {
+            alert("Buku & Kategori wajib dipilih");
+            throw new Error("VALIDATION_ERROR");
           }
+        
+          form.id_buku = id_buku;
+          form.id_kategori = id_kategori;
+        }
 
-        id_buku_transaksi = existing.id_buku_transaksi;
+      const existing = data.find(x => x.id === editId);
+      let id_buku_transaksi = existing?.id_buku_transaksi || null;
+
+      // 🔥 HANDLE TANGGAL TEMPO (FIX DI SINI)
+      let tanggal_tempo = header?.tanggal_tempo || null;
+
+      if (modal === "Tambah") {
+        tanggal_tempo = useTempo ? form.tanggal_tempo : null;
+      }
+      
+
+      // 🔥 HANDLE KAS
+      if (form.catatKas) {
+
+        if (modal === "Edit" && existing?.id_buku_transaksi) {
+
+          const { error } = await supabase
+            .from("tbl_buku_transaksi")
+            .update({
+              id_buku: form.id_buku,
+              id_kategori: form.id_kategori,
+              tipe: tipe,
+              nominal: parseInt(Math.abs(nominal)),
+              deskripsi: form.deskripsi,
+              tanggal: form.tanggal,
+            })
+            .eq("id", existing.id_buku_transaksi);
+
+            if (error) {
+              console.error("❌ UPDATE KAS ERROR:", error);
+              alert(error.message);
+              return;
+            }
+
+          id_buku_transaksi = existing.id_buku_transaksi;
+
+        } else {
+
+          const { data: trxKas, error } = await supabase
+            .from("tbl_buku_transaksi")
+            .insert([{
+              id_buku: form.id_buku,
+              id_kategori: form.id_kategori,
+              tipe: tipe,
+              nominal: parseInt(Math.abs(nominal)),
+              deskripsi: form.deskripsi,
+              tanggal: form.tanggal,
+            }])
+            .select()
+            .single();
+
+            if (error) {
+              console.error("❌ INSERT KAS ERROR:", error);
+              alert(error.message);
+              return;
+            }
+
+          id_buku_transaksi = trxKas?.id || null;
+        }
 
       } else {
+        if (modal === "Edit" && existing?.id_buku_transaksi) {
+          await supabase
+            .from("tbl_buku_transaksi")
+            .update({ is_hidden: true })
+            .eq("id", existing.id_buku_transaksi);
+        }
+      }
 
-        const { data: trxKas, error } = await supabase
-          .from("tbl_buku_transaksi")
-          .insert([{
-            id_buku: form.id_buku,
-            id_kategori: form.id_kategori,
-            tipe: tipe,
-            nominal: parseInt(Math.abs(nominal)),
-            deskripsi: form.deskripsi,
+      // 🔥 SIMPAN UTAMA
+      if (modal === "Edit") {
+          await supabase
+          .from("tbl_transaksi_utang_piutang")
+          .update({
             tanggal: form.tanggal,
-          }])
-          .select()
-          .single();
-
-          if (error) {
-            console.error("❌ INSERT KAS ERROR:", error);
-            alert(error.message);
-            return;
-          }
-
-        id_buku_transaksi = trxKas?.id || null;
-      }
-
-    } else {
-      if (modal === "Edit" && existing?.id_buku_transaksi) {
-        await supabase
-          .from("tbl_buku_transaksi")
-          .update({ is_hidden: true })
-          .eq("id", existing.id_buku_transaksi);
-      }
-    }
-
-    // 🔥 SIMPAN UTAMA
-    if (modal === "Edit") {
-        await supabase
-        .from("tbl_transaksi_utang_piutang")
-        .update({
+            nominal,
+            deskripsi: form.deskripsi,
+            id_tipe_transaksi,
+            id_buku_transaksi, // 🔥 WAJIB ADA
+          })
+          .eq("id", editId);
+      } else {
+        await supabase.from("tbl_transaksi_utang_piutang").insert([{
+          id_utang_piutang: id,
+          id_buku_transaksi,
           tanggal: form.tanggal,
           nominal,
           deskripsi: form.deskripsi,
           id_tipe_transaksi,
-          id_buku_transaksi, // 🔥 WAJIB ADA
-        })
-        .eq("id", editId);
-    } else {
-      await supabase.from("tbl_transaksi_utang_piutang").insert([{
-        id_utang_piutang: id,
-        id_buku_transaksi,
-        tanggal: form.tanggal,
-        nominal,
-        deskripsi: form.deskripsi,
-        id_tipe_transaksi,
-      }]);
-    }
+        }]);
+      }
 
-    // 🔥 UPDATE HEADER TEMPO
-    if (modal === "Tambah") {
-      await supabase
-        .from("tbl_utang_piutang")
-        .update({
-          tanggal_tempo: tanggal_tempo
-        })
-        .eq("id_utang_piutang", id);
-    }
+      // 🔥 UPDATE HEADER TEMPO
+      if (modal === "Tambah") {
+        await supabase
+          .from("tbl_utang_piutang")
+          .update({
+            tanggal_tempo: tanggal_tempo
+          })
+          .eq("id_utang_piutang", id);
+      }
 
-    setModal(null);
-    setForm({});
-    setEditId(null);
-    await updateStatus();
-    fetchData();
-    setUseTempo(false);
+      setModal(null);
+      setForm({});
+      setEditId(null);
+      await updateStatus();
+      await fetchData();
+      setUseTempo(false);
+
+    } catch (err) {
+      console.error("❌ SAVE ERROR:", err);
+      alert("Gagal menyimpan");
+    } finally {
+      setLoadingSave(false);
+    }
   }
 
   async function handleDelete(item) {
@@ -341,7 +354,7 @@ export default function DetailPiutang() {
         .eq("id", item.id_buku_transaksi);
     }
     await updateStatus();
-    fetchData();
+    await fetchData();
   }
 
   return (
@@ -538,7 +551,17 @@ export default function DetailPiutang() {
             )}
 
             <div style={{ display: "flex", gap: 10 }}>
-              <button style={styles.btnPrimary} onClick={save}>Simpan</button>
+            <button
+              style={{
+                ...styles.btnPrimary,
+                opacity: loadingSave ? 0.6 : 1,
+                cursor: loadingSave ? "not-allowed" : "pointer"
+              }}
+              onClick={save}
+              disabled={loadingSave}
+            >
+              {loadingSave ? "Menyimpan..." : "Simpan"}
+            </button>
               <button style={styles.btnDanger} onClick={() => setModal(null)}>Batal</button>
             </div>
 

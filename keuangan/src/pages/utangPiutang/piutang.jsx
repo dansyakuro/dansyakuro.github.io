@@ -17,7 +17,9 @@ export default function Piutang() {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("Belum Lunas");
+
+  const [loadingSave, setLoadingSave] = useState(false);
 
   const [summary, setSummary] = useState({
     total: 0,
@@ -96,51 +98,85 @@ export default function Piutang() {
   }
 
   async function save() {
-    const user = (await supabase.auth.getUser()).data.user;
+    if (loadingSave) return;
+  
+    if (!form.nominal || !form.klien) {
+      return alert("Klien & Nominal wajib diisi");
+    }
+  
+    setLoadingSave(true);
+  
+    try {
+      const user = (await supabase.auth.getUser()).data.user;
 
-    const { data: utang } = await supabase
-      .from("tbl_utang_piutang")
-      .insert([{
-        id_user: user.id,
-        status: "Belum Lunas",
-        tipe: "Piutang",
-        tanggal_tempo: form.pakaiTempo ? form.tanggal_tempo : null,
-        klien: form.klien,
-      }])
-      .select()
-      .single();
-
-    let id_buku_transaksi = null;
-
-    if (form.catatKas) {
-      const { data: trxKas } = await supabase
-        .from("tbl_buku_transaksi")
+      const tanggal = form.tanggal || new Date().toISOString();
+  
+      // 1. insert utang/piutang
+      const { data: utang, error: errUtang } = await supabase
+        .from("tbl_utang_piutang")
         .insert([{
-          id_buku: form.id_buku,
-          tipe: "Pengeluaran",
-          nominal: parseInt(form.nominal),
-          id_kategori: form.id_kategori,
-          deskripsi: form.deskripsi,
-          tanggal: form.tanggal,
+          id_user: user.id,
+          status: "Belum Lunas",
+          tipe: "Piutang",
+          tanggal_tempo: form.pakaiTempo ? form.tanggal_tempo : null,
+          klien: form.klien,
         }])
         .select()
         .single();
-
-      id_buku_transaksi = trxKas.id;
+  
+      if (errUtang) throw errUtang;
+  
+      let id_buku_transaksi = null;
+  
+      // 2. optional: catat ke kas
+      if (form.catatKas) {
+        if (!form.id_buku || !form.id_kategori) {
+          throw new Error("Buku & kategori wajib diisi jika catat kas");
+        }
+  
+        const { data: trxKas, error: errKas } = await supabase
+          .from("tbl_buku_transaksi")
+          .insert([{
+            id_buku: form.id_buku,
+            tipe: "Pengeluaran",
+            nominal: parseInt(form.nominal),
+            id_kategori: form.id_kategori,
+            deskripsi: form.deskripsi,
+            tanggal: tanggal,
+          }])
+          .select()
+          .single();
+  
+        if (errKas) throw errKas;
+  
+        id_buku_transaksi = trxKas.id;
+      }
+  
+      // 3. insert transaksi utang/piutang
+      const { error: errTrx } = await supabase
+        .from("tbl_transaksi_utang_piutang")
+        .insert([{
+          id_utang_piutang: utang.id_utang_piutang,
+          id_buku_transaksi,
+          id_tipe_transaksi: 1,
+          tanggal: tanggal,
+          nominal: -parseInt(form.nominal),
+          deskripsi: form.deskripsi,
+        }]);
+  
+      if (errTrx) throw errTrx;
+  
+      // sukses
+      setModal(false);
+      setForm({});
+      fetchData();
+  
+    } catch (err) {
+      console.error(err);
+      alert("Gagal simpan: " + err.message);
+    } finally {
+      setLoadingSave(false);
     }
-
-    await supabase.from("tbl_transaksi_utang_piutang").insert([{
-      id_utang_piutang: utang.id_utang_piutang,
-      id_buku_transaksi,
-      id_tipe_transaksi: 1,
-      tanggal: form.tanggal,
-      nominal: -parseInt(form.nominal),
-      deskripsi: form.deskripsi,
-    }]);
-
-    setModal(false);
-    setForm({});
-    fetchData();
   }
 
   async function handleDelete(id) {
@@ -222,7 +258,7 @@ export default function Piutang() {
       {/* SUMMARY */}
       <div style={styles.summaryGrid}>
         <SummaryCard title="Catatan" plain value="Buku Piutang" />
-        <SummaryCard title="Jumlah Pengutang" numberOnly value={summary.jumlah} />
+        <SummaryCard title="Jumlah Pengutang" numberOnly value={filtered.length} />
         <SummaryCard title="Total Saldo Piutang" value={Math.abs(summary.total)} />
       </div>
       <div style={{ marginBottom: 10, fontSize: 12 }}>
@@ -429,7 +465,17 @@ export default function Piutang() {
             )}
 
             <div style={{ display: "flex", gap: 10 }}>
-              <button style={styles.btnPrimary} onClick={save}>Simpan</button>
+            <button
+              style={{
+                ...styles.btnPrimary,
+                opacity: loadingSave ? 0.6 : 1,
+                cursor: loadingSave ? "not-allowed" : "pointer"
+              }}
+              onClick={save}
+              disabled={loadingSave}
+            >
+              {loadingSave ? "Menyimpan..." : "Simpan"}
+            </button>
               <button style={styles.btnDanger} onClick={() => setModal(false)}>Batal</button>
             </div>
           </div>
@@ -505,8 +551,7 @@ const styles = {
   td: {
     textAlign: "center",
     padding: 8,
-    fontSize: 12,
-    whiteSpace: "nowrap"
+    fontSize: 12
   },
 
   input: {

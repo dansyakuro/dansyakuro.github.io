@@ -13,14 +13,16 @@ export default function BukuKasIndex() {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  const [bulan, setBulan] = useState("Semua");
+  const [bulan, setBulan] = useState(new Date().getMonth()+1);
   const [tahun, setTahun] = useState(new Date().getFullYear());
   const [tipe, setTipe] = useState("Semua");
+  const [filterKategori, setFilterKategori] = useState("Semua");
 
   const [search, setSearch] = useState("");
 
   const [modal, setModal] = useState(null);
   const [editId, setEditId] = useState(null);
+  const [loadingSave, setLoadingSave] = useState(false);
 
   const [form, setForm] = useState({
     tanggal: "",
@@ -37,7 +39,8 @@ export default function BukuKasIndex() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, tipe, bulan, tahun]);
+  }, [search, tipe, bulan, tahun, filterKategori]);
+  
 
   async function fetchData() {
     const user = (await supabase.auth.getUser()).data.user;
@@ -116,94 +119,112 @@ export default function BukuKasIndex() {
   }
 
   async function save() {
+    if (loadingSave) return;
     if (!form.nominal) return alert("Nominal wajib diisi");
+  
+    setLoadingSave(true);
+  
+    try {
+      const tanggal = form.tanggal || new Date();
+  
+      if (modal === "Transfer") {
 
-    const tanggal = form.tanggal || new Date();
-
-    if (modal === "Transfer") {
+        const nominal = parseInt(form.nominal);
+        const tanggal = form.tanggal || new Date();
       
-      const nominal = parseInt(form.nominal);
-      if (editId) {
-
-        const { data: list } = await supabase
-          .from("tbl_buku_transaksi")
-          .select("*")
-          .eq("kode_transfer", transaksi.find(t => t.id === editId)?.kode_transfer);
-
-        for (const t of list) {
+        if (editId) {
+      
+          const kodeTransfer =
+            transaksi.find(t => t.id === editId)?.kode_transfer;
+      
+          // hapus transfer lama
           await supabase
             .from("tbl_buku_transaksi")
-            .update({
-              nominal,
-              deskripsi: form.deskripsi,
-              tanggal,
-            })
-            .eq("id", t.id);
+            .delete()
+            .eq("kode_transfer", kodeTransfer);
+      
         }
-
-      } else {
-
-      const { data: trxKeluar } = await supabase
-        .from("tbl_buku_transaksi")
-        .insert([{
-          id_buku: form.dari_buku,
-          tipe: "Pengeluaran",
-          nominal,
-          id_kategori: 1,
-          deskripsi: form.deskripsi,
-          tanggal,
-        }])
-        .select()
-        .single();
-
-      const { data: trxMasuk } = await supabase
-        .from("tbl_buku_transaksi")
-        .insert([{
-          id_buku: form.ke_buku,
-          tipe: "Pemasukan",
-          nominal,
-          id_kategori: 1,
-          deskripsi: form.deskripsi,
-          tanggal,
-        }])
-        .select()
-        .single();
-
-      const kode = `${form.dari_buku}_${form.ke_buku}-${trxKeluar.id}_${trxMasuk.id}`;
-
-      await supabase
-        .from("tbl_buku_transaksi")
-        .update({ kode_transfer: kode })
-        .in("id", [trxKeluar.id, trxMasuk.id]);
-      }
-
-    } else {
-      if (editId) {
+      
+        const { data: keluar } = await supabase
+          .from("tbl_buku_transaksi")
+          .insert([{
+            id_buku: form.dari_buku,
+            tipe: "Pengeluaran",
+            nominal,
+            id_kategori: 1,
+            deskripsi: form.deskripsi,
+            tanggal,
+          }])
+          .select()
+          .single();
+      
+        const { data: masuk } = await supabase
+          .from("tbl_buku_transaksi")
+          .insert([{
+            id_buku: form.ke_buku,
+            tipe: "Pemasukan",
+            nominal,
+            id_kategori: 1,
+            deskripsi: form.deskripsi,
+            tanggal,
+          }])
+          .select()
+          .single();
+      
+        const kode =
+          `${form.dari_buku}_${form.ke_buku}-${keluar.id}_${masuk.id}`;
+      
         await supabase
           .from("tbl_buku_transaksi")
           .update({
+            kode_transfer: kode
+          })
+          .in("id", [keluar.id, masuk.id]);
+      } else {
+        if (editId) {
+
+          await supabase
+            .from("tbl_buku_transaksi")
+            .update({
+              nominal: parseInt(form.nominal),
+              id_kategori: form.id_kategori,
+              deskripsi: form.deskripsi,
+              tanggal,
+            })
+            .eq("id", editId);
+      
+          // sinkron ke transaksi utang/piutang jika ada
+          await supabase
+            .from("tbl_transaksi_utang_piutang")
+            .update({
+              deskripsi: form.deskripsi,
+              tanggal,
+            })
+            .eq("id_buku_transaksi", editId);
+        
+        } else {
+          await supabase.from("tbl_buku_transaksi").insert([{
+            id_buku: Number(id_buku),
+            tipe: modal,
             nominal: parseInt(form.nominal),
             id_kategori: form.id_kategori,
             deskripsi: form.deskripsi,
             tanggal,
-          })
-          .eq("id", editId);
-      } else {
-        await supabase.from("tbl_buku_transaksi").insert([{
-          id_buku: Number(id_buku),
-          tipe: modal,
-          nominal: parseInt(form.nominal),
-          id_kategori: form.id_kategori,
-          deskripsi: form.deskripsi,
-          tanggal,
-        }]);
+          }]);
+        }
       }
+  
+      setModal(null);
+      setEditId(null);
+      setForm({});
+      fetchData();
+  
+    } catch (err) {
+      console.error(err);
+      alert("Gagal simpan");
+    } finally {
+      setLoadingSave(false);
     }
-
-    setModal(null);
-    setEditId(null);
-    setForm({});
-    fetchData();
   }
 
   function handleEdit(trx) {
@@ -248,20 +269,67 @@ export default function BukuKasIndex() {
 
   async function handleDelete(trx) {
     if (!confirm("Yakin hapus?")) return;
-
-    if (trx.kode_transfer) {
-      await supabase
-        .from("tbl_buku_transaksi")
-        .delete()
-        .eq("kode_transfer", trx.kode_transfer);
-    } else {
+  
+    try {
+      // =========================
+      // TRANSFER
+      // =========================
+      if (trx.kode_transfer) {
+        await supabase
+          .from("tbl_buku_transaksi")
+          .delete()
+          .eq("kode_transfer", trx.kode_transfer);
+  
+        fetchData();
+        return;
+      }
+  
+      // =========================
+      // CEK APAKAH TERKAIT UTANG/PIUTANG
+      // =========================
+      const { data: relasi } = await supabase
+        .from("tbl_transaksi_utang_piutang")
+        .select("*")
+        .eq("id_buku_transaksi", trx.id)
+        .single();
+  
+      if (relasi) {
+        await supabase
+          .from("tbl_transaksi_utang_piutang")
+          .delete()
+          .eq("id", relasi.id);
+  
+        // update status utang/piutang
+        const { data: list } = await supabase
+          .from("tbl_transaksi_utang_piutang")
+          .select("nominal")
+          .eq("id_utang_piutang", relasi.id_utang_piutang);
+  
+        const saldo = (list || []).reduce((a, b) => a + (b.nominal * -1), 0);
+  
+        await supabase
+          .from("tbl_utang_piutang")
+          .update({
+            status: saldo === 0 ? "Lunas" : "Belum Lunas",
+            tanggal_tempo: saldo === 0 ? null : undefined,
+          })
+          .eq("id_utang_piutang", relasi.id_utang_piutang);
+      }
+  
+      // =========================
+      // HAPUS TRANSAKSI BUKU
+      // =========================
       await supabase
         .from("tbl_buku_transaksi")
         .delete()
         .eq("id", trx.id);
+  
+      fetchData();
+  
+    } catch (err) {
+      console.error(err);
+      alert("Gagal menghapus");
     }
-
-    fetchData();
   }
 
   const transaksiWithSaldo = useMemo(() => {
@@ -276,28 +344,36 @@ export default function BukuKasIndex() {
   const filtered = useMemo(() => {
     return transaksiWithSaldo.filter(t => {
       const tgl = new Date(t.tanggal);
-
+  
       const matchSearch =
         t.deskripsi?.toLowerCase().includes(search.toLowerCase());
-
+  
       const matchTipe =
         tipe === "Semua"
           ? true
           : tipe === "Transfer"
           ? t.id_kategori === 1
           : t.tipe === tipe;
-
+  
       const matchBulan =
         bulan === "Semua"
           ? true
           : tgl.getUTCMonth() + 1 === Number(bulan);
-      
+  
       const matchTahun =
         !tahun ? true : tgl.getUTCFullYear() === Number(tahun);
-
-      return matchSearch && matchTipe && matchBulan && matchTahun;
+  
+      // ✅ INI YANG BARU
+      const matchKategori =
+        filterKategori === "Semua"
+          ? true
+          : filterKategori === "Transfer"
+          ? t.id_kategori === 1
+          : t.id_kategori === Number(filterKategori);
+  
+      return matchSearch && matchTipe && matchBulan && matchTahun && matchKategori;
     });
-  }, [transaksiWithSaldo, search, tipe, bulan, tahun]);
+  }, [transaksiWithSaldo, search, tipe, bulan, tahun, filterKategori]);
 
   const totalData = filtered.length;
   const totalPages = Math.ceil(totalData / rowsPerPage);
@@ -332,10 +408,10 @@ export default function BukuKasIndex() {
 
       <div style={styles.summaryGrid}>
         <SummaryCard title={buku?.nama} desc={buku?.deskripsi} />
-        <SummaryCard title="Saldo Awal Bulan" value={ringkasan?.saldo_awal_bulan} />
-        <SummaryCard title="Saldo Akhir Bulan" value={ringkasan?.saldo_akhir_bulan} />
-        <SummaryCard title="Pemasukan Bulanan" value={ringkasan?.pemasukan_bulanan} />
-        <SummaryCard title="Pengeluaran Bulanan" value={ringkasan?.pengeluaran_bulanan} />
+        <SummaryCard title="Saldo Awal" value={ringkasan?.saldo_awal_bulan} />
+        <SummaryCard title="Saldo Akhir" value={ringkasan?.saldo_akhir_bulan} />
+        <SummaryCard title="Total Pemasukan" value={ringkasan?.pemasukan_bulanan} />
+        <SummaryCard title="Total Pengeluaran" value={ringkasan?.pengeluaran_bulanan} />
       </div>
 
       <div style={{ marginBottom: 10, fontSize: 12 }}>
@@ -366,6 +442,31 @@ export default function BukuKasIndex() {
           <option>Pemasukan</option>
           <option>Pengeluaran</option>
           <option>Transfer</option>
+        </select>
+        
+        <select
+          style={styles.input}
+          value={filterKategori}
+          onChange={(e) => setFilterKategori(e.target.value)}
+        >
+          <option value="Semua">Semua Kategori</option>
+          <option value="Transfer">Transfer</option>
+
+          {[...kategori]
+            .sort((a, b) =>
+              a.nama_kategori.localeCompare(b.nama_kategori)
+            )
+            .map(k => {
+              const prefix =
+                k.id_tipe_transaksi === 1 ? "(+)" :
+                k.id_tipe_transaksi === 2 ? "(-)" : "";
+
+              return (
+                <option key={k.id_kategori} value={k.id_kategori}>
+                  {k.nama_kategori} {prefix} 
+                </option>
+              );
+            })}
         </select>
 
         <select
@@ -404,46 +505,54 @@ export default function BukuKasIndex() {
               </tr>
             </thead>
             <tbody>
-              {currentData.map(trx => (
-                <tr key={trx.id}>
-                  <td style={styles.td}>
-                    <span style={{
-                      padding: "4px 8px",
-                      borderRadius: 6,
-                      fontSize: 12,
-                      background:
-                        trx.kode_transfer
-                          ? "#6a1b9a"
-                          : trx.tipe === "Pemasukan"
-                          ? "#2e7d32"
-                          : "#d32f2f",
-                      color: "#fff"
-                    }}>
-                      {trx.kode_transfer ? "↔" : trx.tipe === "Pemasukan" ? "+" : "-"}
-                    </span>
-                  </td>
-                  <td style={styles.td}>{formatTanggal(trx.tanggal)}</td>
-                  <td style={styles.td}>
-                    {trx.tbl_kategori?.nama_kategori || (trx.id_kategori === 1 ? "Transfer Kas" : "-")}
-                  </td>
-                  <td style={styles.td}>{trx.deskripsi}</td>
-                  <td style={styles.td}>
-                    {trx.tipe === "Pemasukan" ? "Rp " + trx.nominal.toLocaleString() : "-"}
-                  </td>
-                  <td style={styles.td}>
-                    {trx.tipe === "Pengeluaran" ? "Rp " + trx.nominal.toLocaleString() : "-"}
-                  </td>
-                  <td style={styles.td}>
-                    Rp {trx.saldo_running.toLocaleString()}
-                  </td>
-                  <td style={styles.td}>
-                    <div style={{ display: "flex", gap: 6, justifyContent: "center" }}>
-                      <button style={styles.btnPrimary} onClick={() => handleEdit(trx)}>Edit</button>
-                      <button style={styles.btnDanger} onClick={() => handleDelete(trx)}>Hapus</button>
-                    </div>
+              {currentData.length === 0 ? (
+                <tr>
+                  <td style={styles.td} colSpan="8">
+                    Tidak ada data
                   </td>
                 </tr>
-              ))}
+              ) : (
+                currentData.map(trx => (
+                  <tr key={trx.id}>
+                    <td style={styles.td}>
+                      <span style={{
+                        padding: "4px 8px",
+                        borderRadius: 6,
+                        fontSize: 12,
+                        background:
+                          trx.kode_transfer
+                            ? "#6a1b9a"
+                            : trx.tipe === "Pemasukan"
+                            ? "#2e7d32"
+                            : "#d32f2f",
+                        color: "#fff"
+                      }}>
+                        {trx.kode_transfer ? "↔" : trx.tipe === "Pemasukan" ? "+" : "-"}
+                      </span>
+                    </td>
+                    <td style={styles.td}>{formatTanggal(trx.tanggal)}</td>
+                    <td style={styles.td}>
+                      {trx.tbl_kategori?.nama_kategori || (trx.id_kategori === 1 ? "Transfer Kas" : "-")}
+                    </td>
+                    <td style={styles.td}>{trx.deskripsi}</td>
+                    <td style={styles.td}>
+                      {trx.tipe === "Pemasukan" ? "Rp " + trx.nominal.toLocaleString() : "-"}
+                    </td>
+                    <td style={styles.td}>
+                      {trx.tipe === "Pengeluaran" ? "Rp " + trx.nominal.toLocaleString() : "-"}
+                    </td>
+                    <td style={styles.td}>
+                      Rp {trx.saldo_running.toLocaleString()}
+                    </td>
+                    <td style={styles.td}>
+                      <div style={{ display: "flex", gap: 6, justifyContent: "center" }}>
+                        <button style={styles.btnPrimary} onClick={() => handleEdit(trx)}>Edit</button>
+                        <button style={styles.btnDanger} onClick={() => handleDelete(trx)}>Hapus</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
           {totalPages > 0 && (
@@ -497,20 +606,58 @@ export default function BukuKasIndex() {
 
             {modal === "Transfer" && (
               <>
-                <select style={styles.input}
+                <select
+                  style={styles.input}
                   value={form.dari_buku || ""}
-                  onChange={e => setForm({ ...form, dari_buku: e.target.value })}
+                  onChange={e => {
+
+                    const dari = e.target.value;
+
+                    setForm({
+                      ...form,
+                      dari_buku: dari,
+                      ke_buku:
+                        String(form.ke_buku) === String(dari)
+                          ? ""
+                          : form.ke_buku
+                    });
+
+                  }}
                 >
                   <option value="">Dari Buku</option>
-                  {listBuku.map(b => <option key={b.id_buku} value={b.id_buku}>{b.nama}</option>)}
+
+                  {listBuku.map(b => (
+                    <option
+                      key={b.id_buku}
+                      value={b.id_buku}
+                    >
+                      {b.nama}
+                    </option>
+                  ))}
                 </select>
 
-                <select style={styles.input}
+                <select
+                  style={styles.input}
                   value={form.ke_buku || ""}
-                  onChange={e => setForm({ ...form, ke_buku: e.target.value })}
+                  onChange={e =>
+                    setForm({
+                      ...form,
+                      ke_buku: e.target.value
+                    })
+                  }
                 >
                   <option value="">Ke Buku</option>
-                  {listBuku.map(b => <option key={b.id_buku} value={b.id_buku}>{b.nama}</option>)}
+
+                  {listBuku
+                    .filter(b => String(b.id_buku) !== String(form.dari_buku))
+                    .map(b => (
+                      <option
+                        key={b.id_buku}
+                        value={b.id_buku}
+                      >
+                        {b.nama}
+                      </option>
+                    ))}
                 </select>
               </>
             )}
@@ -529,7 +676,8 @@ export default function BukuKasIndex() {
               </select>
             )}
 
-            <input style={styles.input} placeholder="Nominal"
+            <input style={styles.input}  type="number"
+              placeholder="Nominal"
               value={form.nominal || ""}
               onChange={e => setForm({ ...form, nominal: e.target.value })}
             />
@@ -540,9 +688,17 @@ export default function BukuKasIndex() {
             />
 
             <div style={{ display: "flex", gap: 10 }}>
-              <button style={styles.btnPrimary} onClick={save}>
-                {editId ? "Update" : "Simpan"}
-              </button>
+            <button
+              style={{
+                ...styles.btnPrimary,
+                opacity: loadingSave ? 0.6 : 1,
+                cursor: loadingSave ? "not-allowed" : "pointer"
+              }}
+              onClick={save}
+              disabled={loadingSave}
+            >
+              {loadingSave ? "Menyimpan..." : editId ? "Update" : "Simpan"}
+            </button>
 
               <button style={styles.btnDanger} onClick={() => {
                 setModal(null);
@@ -572,7 +728,7 @@ function SummaryCard({ title, value, desc }) {
 
 const styles = {
   th: { textAlign: "center", padding: 8, fontSize: 12, whiteSpace: "nowrap" },
-  td: { textAlign: "center", padding: 8, fontSize: 12, whiteSpace: "nowrap" },
+  td: { textAlign: "center", padding: 8, fontSize: 12 },
 
   summaryGrid: {
     display: "grid",

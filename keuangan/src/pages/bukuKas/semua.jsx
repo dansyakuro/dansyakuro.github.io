@@ -13,6 +13,7 @@ export default function SemuaBuku() {
   const [tipe, setTipe] = useState("Semua");
 
   const [search, setSearch] = useState("");
+  const [bukuList, setBukuList] = useState([]);
 
   useEffect(() => {
     fetchData();
@@ -30,6 +31,8 @@ export default function SemuaBuku() {
       .from("tbl_buku")
       .select("*")
       .eq("id_user", user.id);
+
+    setBukuList(bukuList || []);
 
     // 🔥 ambil semua transaksi + join kategori + buku
     const { data: trx } = await supabase
@@ -50,38 +53,38 @@ export default function SemuaBuku() {
 
     const awal =
       bulan === "Semua"
-        ? new Date(tahun, 0, 1)
-        : new Date(tahun, bulan - 1, 1);
+        ? new Date(Date.UTC(tahun, 0, 1))
+        : new Date(Date.UTC(tahun, bulan - 1, 1));
 
     const akhir =
       bulan === "Semua"
-        ? new Date(tahun, 11, 31)
-        : new Date(tahun, bulan, 0);
-
+        ? new Date(Date.UTC(tahun, 11, 31, 23, 59, 59))
+        : new Date(Date.UTC(tahun, bulan, 0, 23, 59, 59));
+  
     let saldoAwal = 0;
     let pemasukan = 0;
     let pengeluaran = 0;
-
-    // 🔥 saldo awal = semua saldo awal buku
+  
     bukuList.forEach(b => {
       saldoAwal += Number(b.saldo_awal || 0);
     });
-
+  
     data.forEach(t => {
       const tgl = new Date(t.tanggal);
-
-      if (tgl < awal) {
+      const time = tgl.getTime();
+  
+      if (time < awal.getTime()) {
         saldoAwal += t.tipe === "Pemasukan" ? t.nominal : -t.nominal;
       }
-
-      if (tgl >= awal && tgl <= akhir) {
+  
+      if (time >= awal.getTime() && time <= akhir) {
         if (t.tipe === "Pemasukan") pemasukan += t.nominal;
         if (t.tipe === "Pengeluaran") pengeluaran += t.nominal;
       }
     });
-
+  
     const saldoAkhir = saldoAwal + pemasukan - pengeluaran;
-
+  
     setRingkasan({
       saldo_awal_bulan: saldoAwal,
       saldo_akhir_bulan: saldoAkhir,
@@ -103,20 +106,76 @@ export default function SemuaBuku() {
   }
 
   const transaksiWithSaldo = useMemo(() => {
-    let saldo = 0;
 
-    return [...transaksi]
-      .sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal))
-      .map(t => {
-        saldo += t.tipe === "Pemasukan" ? t.nominal : -t.nominal;
-        return { ...t, saldo_running: saldo };
-      })
-      .reverse(); // balik lagi biar DESC
-  }, [transaksi]);
+     const awal =
+      bulan === "Semua"
+        ? new Date(Date.UTC(tahun, 0, 1))
+        : new Date(Date.UTC(tahun, bulan - 1, 1));
+
+    const akhir =
+      bulan === "Semua"
+        ? new Date(Date.UTC(tahun, 11, 31, 23, 59, 59))
+        : new Date(Date.UTC(tahun, bulan, 0, 23, 59, 59));
+  
+    // 🔥 1. base saldo dari semua buku
+    let saldo = bukuList.reduce(
+      (acc, b) => acc + Number(b.saldo_awal || 0),
+      0
+    );
+  
+    // 🔥 2. urutkan ASC
+    const sorted = [...transaksi].sort(
+      (a, b) => new Date(a.tanggal).getTime() - new Date(b.tanggal).getTime()
+    );
+  
+    // 🔥 3. HITUNG SALDO SEBELUM PERIODE (INI YANG KAMU KURANGIN)
+    sorted.forEach(t => {
+      const tgl = new Date(t.tanggal);
+      const time = tgl.getTime();
+      const nominal = Number(t.nominal) || 0;
+  
+      if (time < awal) {
+        saldo += t.tipe === "Pemasukan" ? nominal : -nominal;
+      }
+    });
+  
+    const result = [];
+  
+    // ✅ sekarang saldo ini SUDAH SAMA dengan ringkasan.saldo_awal_bulan
+    result.push({
+      id: "saldo-awal",
+      tanggal: new Date(awal.getTime() - 1000),
+      tipe: "Saldo Awal",
+      deskripsi: "Saldo Awal",
+      nominal: 0,
+      saldo_running: saldo,
+    });
+  
+    // 🔥 4. lanjut transaksi dalam periode
+    sorted.forEach(t => {
+      const tgl = new Date(t.tanggal);
+      const time = tgl.getTime();
+      const nominal = Number(t.nominal) || 0;
+  
+      if (time < awal.getTime()) return;
+      if (time > akhir.getTime()) return;
+  
+      saldo += t.tipe === "Pemasukan" ? nominal : -nominal;
+  
+      result.push({
+        ...t,
+        saldo_running: saldo,
+      });
+    });
+  
+    return result.sort(
+      (a, b) => new Date(b.tanggal) - new Date(a.tanggal)
+    );
+  
+  }, [transaksi, bukuList, bulan, tahun]);
 
   const filtered = useMemo(() => {
     return transaksiWithSaldo.filter(t => {
-      const tgl = new Date(t.tanggal);
 
       const matchSearch =
         t.deskripsi?.toLowerCase().includes(search.toLowerCase());
@@ -128,15 +187,7 @@ export default function SemuaBuku() {
           ? t.id_kategori === 1
           : t.tipe === tipe;
 
-      const matchBulan =
-        bulan === "Semua"
-          ? true
-          : tgl.getUTCMonth() + 1 === Number(bulan);
-
-      const matchTahun =
-        !tahun ? true : tgl.getUTCFullYear() === Number(tahun);
-
-      return matchSearch && matchTipe && matchBulan && matchTahun;
+      return matchSearch && matchTipe;
     });
   }, [transaksiWithSaldo, search, tipe, bulan, tahun]);
 
@@ -175,10 +226,10 @@ export default function SemuaBuku() {
       {/* 🔥 SUMMARY (TIDAK DIUBAH) */}
       <div style={styles.summaryGrid}>
         <SummaryCard title="Semua Buku" />
-        <SummaryCard title="Saldo Awal Bulan" value={ringkasan?.saldo_awal_bulan} />
-        <SummaryCard title="Saldo Akhir Bulan" value={ringkasan?.saldo_akhir_bulan} />
-        <SummaryCard title="Pemasukan Bulanan" value={ringkasan?.pemasukan_bulanan} />
-        <SummaryCard title="Pengeluaran Bulanan" value={ringkasan?.pengeluaran_bulanan} />
+        <SummaryCard title="Saldo Awal" value={ringkasan?.saldo_awal_bulan} />
+        <SummaryCard title="Saldo Akhir" value={ringkasan?.saldo_akhir_bulan} />
+        <SummaryCard title="Total Pemasukan" value={ringkasan?.pemasukan_bulanan} />
+        <SummaryCard title="Total Pengeluaran" value={ringkasan?.pengeluaran_bulanan} />
       </div>
 
       <div style={{ marginBottom: 10, fontSize: 12 }}>
@@ -294,7 +345,7 @@ export default function SemuaBuku() {
                   </td>
 
                   <td style={styles.td}>
-                    Rp {trx.saldo_running.toLocaleString()}
+                      Rp {Number(trx.saldo_running || 0).toLocaleString()}
                   </td>
                 </tr>
               ))}
@@ -358,7 +409,7 @@ function SummaryCard({ title, value, desc }) {
 // 🔥 STYLE (TETAP)
 const styles = {
   th: { textAlign: "center", padding: 8, fontSize: 12, whiteSpace: "nowrap" },
-  td: { textAlign: "center", padding: 8, fontSize: 12, whiteSpace: "nowrap" },
+  td: { textAlign: "center", padding: 8, fontSize: 12},
 
   summaryGrid: {
     display: "grid",

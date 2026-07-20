@@ -50,6 +50,7 @@ const styles = {
     marginLeft: 12,
     fontWeight: 500,
     cursor: "pointer",
+    color: "#fff"
   },
 
   menuBtn: {
